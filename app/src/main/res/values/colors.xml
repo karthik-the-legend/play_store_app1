@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors the Compose palette in core/ui/theme/Color.kt so launch has no colour jump. -->
+    <color name="window_background">#FFFBFBFE</color>
+    <color name="brand_glyph">#FF3F3CBB</color>
+    <color name="launcher_background">#FF3F3CBB</color>
+</resources>

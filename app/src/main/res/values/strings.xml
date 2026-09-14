@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">FormKit</string>
+
+    <!-- Shared -->
+    <string name="cd_back">Back</string>
+    <string name="size_kb">%1$d KB</string>
+
+    <!-- Home -->
+    <string name="home_headline">Get your files form-ready</string>
+    <string name="home_subtitle">Photos, signatures and PDFs, sized exactly the way online forms want them.</string>
+    <string name="home_privacy_badge">Works offline · Files never leave your phone</string>
+    <string name="home_section_photos">Photos &amp; signatures</string>
+    <string name="home_section_pdf">PDF tools</string>
+    <string name="home_featured_label">Most used</string>
+    <string name="cd_recent_files">Recent files</string>
+    <string name="cd_settings">Settings</string>
+
+    <!-- Tools -->
+    <string name="tool_resize_title">Resize to exact KB</string>
+    <string name="tool_resize_desc">Hit any upload limit, like 20 KB or 50 KB, without going over</string>
+    <string name="tool_passport_title">Passport photo</string>
+    <string name="tool_passport_desc">Right size, clean background</string>
+    <string name="tool_signature_title">Signature</string>
+    <string name="tool_signature_desc">Clean up, crop or draw your sign</string>
+    <string name="tool_images_to_pdf_title">Images to PDF</string>
+    <string name="tool_images_to_pdf_desc">Combine photos into one PDF</string>
+    <string name="tool_compress_pdf_title">Compress PDF</string>
+    <string name="tool_compress_pdf_desc">Shrink a PDF to a KB limit</string>
+    <string name="tool_merge_pdf_title">Merge PDFs</string>
+    <string name="tool_merge_pdf_desc">Join files in any order</string>
+    <string name="tool_split_pdf_title">Split PDF</string>
+    <string name="tool_split_pdf_desc">Pull out just the pages you need</string>
+    <string name="tool_pdf_to_images_title">PDF to images</string>
+    <string name="tool_pdf_to_images_desc">Save pages as JPEG or PNG</string>
+
+    <!-- Tool not built yet -->
+    <string name="coming_soon_title">Almost ready</string>
+    <string name="coming_soon_body">%1$s is being built right now and will arrive in an upcoming update.</string>
+    <string name="coming_soon_action">Back to tools</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_page_indicator">Page %1$d of %2$d</string>
+    <string name="onboarding_1_title">Hit every upload limit</string>
+    <string name="onboarding_1_body">Set a limit like 20 KB or 50 KB and FormKit lands just under it. Never over.</string>
+    <string name="onboarding_2_title">Photos and signatures, form-ready</string>
+    <string name="onboarding_2_body">Make passport-size photos with a clean background, and turn a signature on paper into a crisp, clear image.</string>
+    <string name="onboarding_3_title">Private by design</string>
+    <string name="onboarding_3_body">Everything happens on your phone, even in airplane mode. Your photos and documents are never uploaded.</string>
+    <string name="onboarding_ill_target">Limit: %1$s</string>
+    <string name="onboarding_ill_ready">Ready to upload</string>
+
+    <!-- Recent files -->
+    <string name="recent_title">Recent files</string>
+    <string name="recent_empty_title">No files yet</string>
+    <string name="recent_empty_body">Files you save from any tool show up here, so you can share them again in a tap.</string>
+    <string name="recent_empty_action">Resize a photo</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_section_storage">Storage</string>
+    <string name="settings_save_location">Where files are saved</string>
+    <string name="settings_save_location_value">Photos go to Pictures/FormKit, PDFs go to Documents/FormKit</string>
+    <string name="settings_temp_files">Temporary files</string>
+    <string name="settings_temp_files_value">%1$s · cleared automatically after a day</string>
+    <string name="settings_temp_files_calculating">Calculating…</string>
+    <string name="settings_temp_files_clear">Clear</string>
+    <string name="settings_temp_files_cleared">Freed %1$s</string>
+    <string name="settings_temp_files_nothing">Nothing to clear. Temporary files are already empty.</string>
+    <string name="settings_section_pro">FormKit Pro</string>
+    <string name="settings_pro_title">Remove ads with a one-time purchase</string>
+    <string name="settings_pro_body">No subscription. Coming in an upcoming update.</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_value">Your files are never uploaded</string>
+    <string name="settings_rate">Rate FormKit</string>
+    <string name="settings_share">Share FormKit</string>
+    <string name="settings_version">Version</string>
+
+    <string name="privacy_dialog_title">Your files stay on your phone</string>
+    <string name="privacy_dialog_body">FormKit resizes, edits and converts files entirely on your device. There\'s no account, no server and no cloud storage, so nothing is uploaded and nobody else can see your files.</string>
+    <string name="privacy_dialog_ok">Got it</string>
+
+    <string name="share_app_text">I use FormKit to resize photos to an exact KB size and make passport photos for online forms. It works offline: %1$s</string>
+    <string name="share_app_chooser">Share FormKit</string>
+    <string name="error_no_store">Couldn\'t open an app store on this phone. Search for FormKit on Google Play instead.</string>
+    <string name="error_no_share_target">No app on this phone can share text. Try again after installing a messaging app.</string>
+</resources>

@@ -1,0 +1,21 @@
+<!-- Round launcher icon for Android 7.x, which predates adaptive icons. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="@color/launcher_background"
+        android:pathData="M24,2a22,22 0 1 1 0,44a22,22 0 1 1 0,-44z" />
+    <group
+        android:scaleX="0.4444"
+        android:scaleY="0.4444">
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M40,29h20l12,12v34a4,4 0 0 1 -4,4H40a4,4 0 0 1 -4,-4V33a4,4 0 0 1 4,-4zM60,29v8a4,4 0 0 0 4,4h8M54,48v19M46,59l8,8 8,-8"
+            android:strokeWidth="6"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>
