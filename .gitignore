@@ -10,6 +10,9 @@
 .externalNativeBuild/
 .cxx/
 
+# Real photos used for manual checks (signatures etc.) stay on this machine
+/samples/
+
 # Signing material never goes in the repo
 *.jks
 *.keystore

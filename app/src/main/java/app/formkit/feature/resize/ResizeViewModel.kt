@@ -6,12 +6,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.formkit.core.di.ApplicationScope
 import app.formkit.core.di.IoDispatcher
-import app.formkit.core.history.ExportHistoryRepository
-import app.formkit.core.history.ExportRecord
+import app.formkit.core.export.ImageExports
+import app.formkit.core.imaging.OptionsValidation
 import app.formkit.core.imaging.PixelSize
 import app.formkit.core.imaging.SourceImageDecoder
 import app.formkit.core.imaging.TargetProgress
-import app.formkit.core.storage.FileExporter
 import app.formkit.core.storage.SourceImporter
 import app.formkit.core.storage.Workspaces
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +33,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.IOException
-import java.util.UUID
 import javax.inject.Inject
 
 sealed interface ResizeProblem {
@@ -68,8 +66,7 @@ class ResizeViewModel @Inject constructor(
     private val importer: SourceImporter,
     private val decoder: SourceImageDecoder,
     private val processor: ResizeProcessor,
-    private val exporter: FileExporter,
-    private val history: ExportHistoryRepository,
+    private val exports: ImageExports,
     private val workspaces: Workspaces,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @ApplicationScope private val appScope: CoroutineScope,
@@ -230,27 +227,16 @@ class ResizeViewModel @Inject constructor(
         activity.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             try {
-                val exported = exporter.saveImage(
-                    source = File(result.path),
+                val exported = exports.save(
+                    file = File(result.path),
                     displayName = exportFileName(source.displayName, result.sizeBytes, result.format),
-                    mimeType = result.format.mimeType,
+                    format = result.format,
                     maxBytes = result.maxBytes,
+                    size = result.size,
                 )
                 updateSession { s ->
                     s.copy(result = s.result?.copy(savedUri = exported.uri.toString(), savedName = exported.displayName))
                 }
-                history.add(
-                    ExportRecord(
-                        id = UUID.randomUUID().toString(),
-                        uri = exported.uri.toString(),
-                        displayName = exported.displayName,
-                        mimeType = result.format.mimeType,
-                        sizeBytes = exported.sizeBytes,
-                        width = result.width,
-                        height = result.height,
-                        createdAtMillis = System.currentTimeMillis(),
-                    ),
-                )
                 _events.send(ResizeEvent.Saved(exported.displayName))
             } catch (e: CancellationException) {
                 throw e
@@ -268,14 +254,8 @@ class ResizeViewModel @Inject constructor(
         val result = current.result ?: return
         viewModelScope.launch {
             try {
-                val uri = result.savedUri?.let(Uri::parse) ?: withContext(ioDispatcher) {
-                    // Give the shared copy a readable name; receiving apps show it.
-                    val resultFile = File(result.path)
-                    val named = File(resultFile.parentFile, "share/${exportFileName(source.displayName, result.sizeBytes, result.format)}")
-                    named.parentFile?.mkdirs()
-                    resultFile.copyTo(named, overwrite = true)
-                    exporter.shareableUri(named)
-                }
+                val uri = result.savedUri?.let(Uri::parse)
+                    ?: exports.shareableCopy(File(result.path), exportFileName(source.displayName, result.sizeBytes, result.format))
                 _events.send(ResizeEvent.Share(uri, result.format.mimeType))
             } catch (e: CancellationException) {
                 throw e

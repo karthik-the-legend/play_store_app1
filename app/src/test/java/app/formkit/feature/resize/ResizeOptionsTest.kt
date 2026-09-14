@@ -1,5 +1,7 @@
 package app.formkit.feature.resize
 
+import app.formkit.core.imaging.OptionsError
+import app.formkit.core.imaging.OptionsValidation
 import app.formkit.core.imaging.OutputFormat
 import app.formkit.core.imaging.PixelSize
 import app.formkit.core.imaging.SizeTarget

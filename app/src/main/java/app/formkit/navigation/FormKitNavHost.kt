@@ -18,6 +18,7 @@ import app.formkit.feature.onboarding.OnboardingScreen
 import app.formkit.feature.recent.RecentFilesScreen
 import app.formkit.feature.resize.ResizeRoute
 import app.formkit.feature.settings.SettingsScreen
+import app.formkit.feature.signature.SignatureRoute
 import kotlinx.serialization.Serializable
 
 @Serializable data object OnboardingRoute
@@ -67,6 +68,7 @@ fun FormKitNavHost(
             val onBack = dropUnlessResumed { navController.popBackStack() }
             when (val tool = entry.toRoute<ToolRoute>().tool) {
                 Tool.ResizeKb -> ResizeRoute(onBack = onBack)
+                Tool.Signature -> SignatureRoute(onBack = onBack)
                 else -> ToolPlaceholderScreen(tool = tool, onBack = onBack)
             }
         }

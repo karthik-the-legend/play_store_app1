@@ -1,8 +1,11 @@
 package app.formkit.feature.resize
 
+import app.formkit.core.imaging.OptionsError
+import app.formkit.core.imaging.OptionsValidation
 import app.formkit.core.imaging.OutputFormat
 import app.formkit.core.imaging.PixelSize
 import app.formkit.core.imaging.SizeTarget
+import app.formkit.core.imaging.TargetInput
 import kotlinx.serialization.Serializable
 
 enum class SizePreset(val kilobytes: Int?) {
@@ -19,22 +22,6 @@ enum class DimensionPreset(val size: PixelSize?) {
     /** 35×45 mm at 300 DPI, the Indian passport photo size. */
     P413x531(PixelSize(413, 531)),
     Custom(null),
-}
-
-enum class OptionsError {
-    CustomSizeMissing,
-    CustomSizeTooSmall,
-    CustomSizeTooLarge,
-    MinimumTooSmall,
-    MinimumAboveMaximum,
-    DimensionsMissing,
-    DimensionsTooSmall,
-    DimensionsTooLarge,
-}
-
-sealed interface OptionsValidation {
-    data class Valid(val target: SizeTarget) : OptionsValidation
-    data class Invalid(val errors: Set<OptionsError>) : OptionsValidation
 }
 
 /** Everything the user has set on the resize screen. Text fields keep what was typed. */
@@ -55,18 +42,7 @@ data class ResizeOptions(
     fun validate(): OptionsValidation {
         val errors = mutableSetOf<OptionsError>()
 
-        val maxKb: Int? = when (sizePreset) {
-            SizePreset.Custom -> {
-                val typed = customKb.toIntOrNull()
-                when {
-                    typed == null -> errors += OptionsError.CustomSizeMissing
-                    typed < MIN_KB -> errors += OptionsError.CustomSizeTooSmall
-                    typed > MAX_KB -> errors += OptionsError.CustomSizeTooLarge
-                }
-                typed?.takeIf { it in MIN_KB..MAX_KB }
-            }
-            else -> sizePreset.kilobytes
-        }
+        val maxKb = if (sizePreset == SizePreset.Custom) TargetInput.kilobytes(customKb, errors) else sizePreset.kilobytes
 
         val minimumKb: Int? = if (showMinimum && minKb.isNotEmpty()) {
             val typed = minKb.toIntOrNull()
@@ -79,22 +55,10 @@ data class ResizeOptions(
             null
         }
 
-        val exactSize: PixelSize? = when (dimensionPreset) {
-            DimensionPreset.Custom -> {
-                val width = customWidth.toIntOrNull()
-                val height = customHeight.toIntOrNull()
-                when {
-                    width == null || height == null -> errors += OptionsError.DimensionsMissing
-                    width < MIN_EDGE || height < MIN_EDGE -> errors += OptionsError.DimensionsTooSmall
-                    width > MAX_EDGE || height > MAX_EDGE -> errors += OptionsError.DimensionsTooLarge
-                }
-                if (width != null && height != null && width in MIN_EDGE..MAX_EDGE && height in MIN_EDGE..MAX_EDGE) {
-                    PixelSize(width, height)
-                } else {
-                    null
-                }
-            }
-            else -> dimensionPreset.size
+        val exactSize = if (dimensionPreset == DimensionPreset.Custom) {
+            TargetInput.dimensions(customWidth, customHeight, errors)
+        } else {
+            dimensionPreset.size
         }
 
         if (errors.isNotEmpty() || maxKb == null) return OptionsValidation.Invalid(errors)
@@ -111,13 +75,11 @@ data class ResizeOptions(
     }
 
     companion object {
-        /** 1 KB = 1000 bytes. A file under N × 1000 bytes also passes portals that count 1024. */
-        const val BYTES_PER_KB = 1000L
-        const val MIN_KB = 5
-        const val MAX_KB = 50_000
-        const val MIN_EDGE = 16
-        const val MAX_EDGE = 8000
-        const val MAX_DIGITS = 5
+        const val BYTES_PER_KB = TargetInput.BYTES_PER_KB
+        const val MIN_KB = TargetInput.MIN_KB
+        const val MAX_KB = TargetInput.MAX_KB
+        const val MIN_EDGE = TargetInput.MIN_EDGE
+        const val MAX_EDGE = TargetInput.MAX_EDGE
     }
 }
 

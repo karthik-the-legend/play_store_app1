@@ -4,13 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -18,7 +15,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -35,8 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.formkit.R
 import app.formkit.core.ui.components.BackTopBar
-import app.formkit.core.ui.components.BottomActionBar
-import app.formkit.core.ui.components.PrimaryButton
+import app.formkit.core.ui.components.ExportActionsBar
 import app.formkit.core.ui.formatSize
 import app.formkit.core.ui.theme.Spacing
 import coil3.compose.AsyncImage
@@ -58,40 +53,13 @@ internal fun ResizeResultScreen(
         topBar = { BackTopBar(stringResource(R.string.resize_result_title), onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            BottomActionBar {
-                if (result.savedUri == null) {
-                    PrimaryButton(
-                        text = stringResource(R.string.resize_save),
-                        onClick = onSave,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isSaving,
-                    )
-                } else {
-                    SavedIndicator()
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
-                    OutlinedButton(
-                        onClick = onShare,
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 56.dp),
-                    ) {
-                        Icon(painterResource(R.drawable.ic_share), contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(Spacing.small))
-                        Text(stringResource(R.string.resize_share))
-                    }
-                    OutlinedButton(
-                        onClick = onDoAnother,
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 56.dp),
-                    ) {
-                        Text(stringResource(R.string.resize_do_another), textAlign = TextAlign.Center)
-                    }
-                }
-            }
+            ExportActionsBar(
+                isSaved = result.savedUri != null,
+                isSaving = isSaving,
+                onSave = onSave,
+                onShare = onShare,
+                onDoAnother = onDoAnother,
+            )
         },
     ) { innerPadding ->
         Column(
@@ -248,26 +216,5 @@ private fun StatRow(label: String, value: String) {
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1.5f),
         )
-    }
-}
-
-@Composable
-private fun SavedIndicator() {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier
-                .heightIn(min = 56.dp)
-                .padding(horizontal = Spacing.medium),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.small, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(painterResource(R.drawable.ic_check_circle), contentDescription = null, modifier = Modifier.size(20.dp))
-            Text(stringResource(R.string.resize_saved_indicator), style = MaterialTheme.typography.labelLarge)
-        }
     }
 }

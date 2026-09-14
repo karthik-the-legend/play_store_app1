@@ -116,6 +116,47 @@ MediaPipe, AdMob, UMP, Play Billing.
   export, but that would break Back to settings and Share after saving, so cleanup happens when
   the session ends instead.
 
+## Signature cleanup (Milestone 3)
+
+- **No OpenCV.** It would add 10+ MB per ABI. Cleanup is about 250 lines of Kotlin working on
+  plain pixel arrays, so it's unit-tested on the JVM.
+- **Adaptive threshold (Bradley–Roth with an integral image):** each pixel is compared with the
+  mean brightness of a window around it (radius = long edge / 24). Shadows and off-white paper
+  scale paper and ink together, so they cancel out. Edges get a soft ramp (coverage 0–255)
+  instead of a hard cut, so exported strokes are anti-aliased rather than jagged.
+- **Brightness is the average of luminance and the brightest channel.** Light-blue and red
+  ruled lines are bright in at least one channel, so they fade into the paper, while blue and
+  black pen stays dark. Red pen still reads as ink, just less strongly.
+- **After thresholding, connected pieces that aren't handwriting are removed:**
+  - specks smaller than max(6 px, image area / 100,000);
+  - ruled lines at least 80% of the page long and at most 3% thick;
+  - bands running edge to edge that are no wider than three windows. This is what a hard shadow
+    or the paper's edge leaves behind. If a signature touches the band it becomes one wide
+    piece and is kept; better an edge left for the user to crop out than a lost signature;
+  - large, sparse shapes touching the border.
+- **Ink strength** moves the threshold (35% darker than the surroundings at 0, 8% at 1). From
+  0.75 up it also thickens strokes by one pixel, so "bolder" is visibly bolder.
+- **Photos are processed at 1600 px on the long edge.** That's plenty for a signature crop, and
+  fast enough that the preview follows the slider (with a 40 ms debounce).
+- **Output ink is pure black** whatever the pen colour. Forms ask for black-on-white.
+- **Exact dimensions (140×60 etc.) pad instead of crop.** The signature is scaled to fit and
+  centred, and the rest is filled with white or transparency, so no part of the name is lost.
+- **The camera is the system camera app** (`ACTION_IMAGE_CAPTURE` into a FileProvider file), so
+  there's still no `CAMERA` permission. The pending capture path is saved in case the camera
+  app's memory use kills FormKit.
+- **The drawing pad is 2.5:1** and always white with black ink, in both themes. Strokes are
+  stored as rounded fractions of the pad, with points closer than 0.3% of its width dropped,
+  so a signature is a few KB of saved state. Export renders them at 1500 px wide, then uses
+  the same crop, fit and size search as photos.
+- **Back from the photo or drawing screen returns to the choice screen** and discards that
+  photo or drawing; output settings are kept.
+- **Shared with Resize now:** saving and sharing (`ImageExports`), the result action bar, the
+  Android 9 storage-permission gate, `Section` and `NumberField`, the progress dialog and
+  `TargetInput` (KB and dimension parsing).
+- **Limitation:** a hard-edged shadow crossing the signature itself can't be separated from
+  the ink. The user sees the band in the preview and can crop, raise or lower ink strength, or
+  retake. The tips on the start screen say to avoid shadows across the page.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
@@ -125,6 +166,7 @@ download size Play would serve, which is what the 25 MB budget refers to.
 |---|---|---|---|
 | 1 – skeleton | 3.32 MB | 1.13–1.14 MiB (1,185,341–1,195,718 bytes) | Compose, Material 3, Hilt, Navigation, DataStore. No native code yet. |
 | 2 – resize to KB | 4.40 MB | 1.51–1.52 MiB (1,578,216–1,591,301 bytes) | +Coil 3, ExifInterface, kotlinx-serialization-json: about +0.4 MB. |
+| 3 – signature | 4.56 MB | 1.56–1.57 MiB (1,636,714–1,650,704 bytes) | Cleanup is plain Kotlin, no new libraries: about +58 KB. |
 
 ## Test environment notes
 

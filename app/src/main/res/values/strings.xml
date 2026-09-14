@@ -142,13 +142,77 @@
     <string name="resize_stat_smaller">%1$d%% smaller</string>
     <string name="resize_stat_not_smaller">Not smaller than the original</string>
     <string name="resize_result_cropped">Cropped from the centre to %1$s.</string>
-    <string name="resize_save">Save to phone</string>
-    <string name="resize_saved_indicator">Saved to Pictures/FormKit</string>
-    <string name="resize_share">Share</string>
-    <string name="resize_do_another">Do another</string>
-    <string name="resize_saved">Saved as %1$s in Pictures/FormKit</string>
     <string name="resize_share_chooser">Share photo</string>
-    <string name="resize_storage_permission_denied">Saving needs storage access on this version of Android. You can still use Share to send the photo.</string>
+
+    <!-- Saving and sharing, shared by every tool -->
+    <string name="export_save">Save to phone</string>
+    <string name="export_saved_indicator">Saved to Pictures/FormKit</string>
+    <string name="export_share">Share</string>
+    <string name="export_do_another">Do another</string>
+    <string name="export_saved">Saved as %1$s in Pictures/FormKit</string>
+    <string name="export_storage_permission_denied">Saving needs storage access on this version of Android. You can still use Share to send the file.</string>
+
+    <!-- Signature: start -->
+    <string name="signature_photo_title">Photo of your signature</string>
+    <string name="signature_photo_body">Sign on plain paper with a dark pen, then take or choose a photo. FormKit removes the paper, lines and shadows.</string>
+    <string name="signature_take_photo">Take photo</string>
+    <string name="signature_choose_photo">Choose photo</string>
+    <string name="signature_draw_title">Draw your signature</string>
+    <string name="signature_draw_body">Sign with your finger or a stylus. Good when you don\'t have paper to hand.</string>
+    <string name="signature_draw_action">Draw signature</string>
+    <string name="signature_tips_title">For the cleanest result</string>
+    <string name="signature_tips_body">Use a black or dark blue pen, sign a little bigger than usual, and take the photo in even light without your shadow across the page.</string>
+    <string name="signature_no_camera">No camera app found on this phone. Choose a photo instead.</string>
+
+    <!-- Signature: photo -->
+    <string name="signature_clean_title">Clean up signature</string>
+    <string name="cd_signature_preview">Cleaned signature with crop frame</string>
+    <string name="signature_loading">Cleaning up your photo…</string>
+    <string name="signature_crop_hint">Drag the corners or the frame to choose what\'s included.</string>
+    <string name="signature_no_ink_hint">No signature found. Raise the ink strength, or retake the photo with a darker pen in better light.</string>
+    <string name="signature_auto_crop">Auto crop</string>
+    <string name="signature_whole_photo">Whole photo</string>
+    <string name="signature_change_photo">Change photo</string>
+    <string name="signature_ink_title">Ink strength</string>
+    <string name="signature_ink_hint">Raise it if strokes look broken or faint. Lower it if marks from the paper show up.</string>
+    <string name="signature_ink_lighter">Lighter</string>
+    <string name="signature_ink_bolder">Bolder</string>
+    <string name="cd_ink_strength">Ink strength</string>
+
+    <!-- Signature: draw -->
+    <string name="signature_draw_screen_title">Draw signature</string>
+    <string name="cd_signature_pad">Signature drawing area</string>
+    <string name="signature_pad_hint">Sign here</string>
+    <string name="signature_stroke_thin">Thin</string>
+    <string name="signature_stroke_medium">Medium</string>
+    <string name="signature_stroke_bold">Bold</string>
+    <string name="cd_undo_stroke">Undo last stroke</string>
+    <string name="signature_clear">Clear</string>
+
+    <!-- Signature: output -->
+    <string name="signature_background_title">Background</string>
+    <string name="signature_background_white">White</string>
+    <string name="signature_background_transparent">Transparent</string>
+    <string name="signature_background_white_hint">Saved as JPEG. Accepted by almost every form.</string>
+    <string name="signature_background_transparent_hint">Saved as PNG. Only choose this if the form accepts PNG files.</string>
+    <string name="signature_size_no_limit">No limit</string>
+    <string name="signature_dimensions_hint">Optional. Many forms ask for 140×60 or 160×60 pixels.</string>
+    <string name="signature_dimension_fit">Fit signature</string>
+    <string name="signature_fit_note">The signature is centred in this size, with space added around it rather than cropped.</string>
+    <string name="signature_create">Make signature file</string>
+    <string name="signature_processing">Making your signature file…</string>
+
+    <!-- Signature: result -->
+    <string name="signature_result_title">Signature ready</string>
+    <string name="signature_result_details">%1$s · %2$s</string>
+    <string name="signature_format_jpeg_white">JPEG on white</string>
+    <string name="signature_format_png_transparent">Transparent PNG</string>
+    <string name="cd_signature_result">Finished signature</string>
+    <string name="signature_transparent_note">The checkered pattern marks transparent areas. It isn\'t part of the file.</string>
+    <string name="signature_share_chooser">Share signature</string>
+    <string name="signature_problem_no_ink_title">Nothing to save yet</string>
+    <string name="signature_problem_no_ink_body">The pad is empty. Sign inside it, then try again.</string>
+    <string name="signature_problem_unexpected_body">Try again, or start over with a new photo or drawing.</string>
 
     <!-- Recent files -->
     <string name="recent_title">Recent files</string>

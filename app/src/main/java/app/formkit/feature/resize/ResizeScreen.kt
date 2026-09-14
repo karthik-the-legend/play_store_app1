@@ -1,8 +1,5 @@
 package app.formkit.feature.resize
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -10,7 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -22,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -32,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -47,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -55,29 +48,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.formkit.R
+import app.formkit.core.imaging.OptionsError
+import app.formkit.core.imaging.OptionsValidation
 import app.formkit.core.imaging.OutputFormat
 import app.formkit.core.imaging.TargetProgress
 import app.formkit.core.ui.components.BackTopBar
 import app.formkit.core.ui.components.BottomActionBar
+import app.formkit.core.ui.components.NumberField
 import app.formkit.core.ui.components.PrimaryButton
+import app.formkit.core.ui.components.ProgressDialog
+import app.formkit.core.ui.components.Section
+import app.formkit.core.ui.components.rememberStorageAwareSave
 import app.formkit.core.ui.formatSize
 import app.formkit.core.ui.shareFile
 import app.formkit.core.ui.theme.Spacing
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
@@ -87,7 +78,6 @@ fun ResizeRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -96,23 +86,13 @@ fun ResizeRoute(
     val pickImage: () -> Unit = {
         picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
-
-    val permissionDenied = stringResource(R.string.resize_storage_permission_denied)
-    val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) viewModel.save() else scope.launch { snackbarHostState.showSnackbar(permissionDenied) }
-    }
-    val save: () -> Unit = {
-        // Only Android 9 and older need a permission to write into Pictures.
-        val needsPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-        if (needsPermission) storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE) else viewModel.save()
-    }
+    val save = rememberStorageAwareSave(snackbarHostState, viewModel::save)
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
                 is ResizeEvent.Saved ->
-                    snackbarHostState.showSnackbar(context.getString(R.string.resize_saved, event.displayName))
+                    snackbarHostState.showSnackbar(context.getString(R.string.export_saved, event.displayName))
                 is ResizeEvent.Share ->
                     if (!context.shareFile(event.uri, event.mimeType, context.getString(R.string.resize_share_chooser))) {
                         snackbarHostState.showSnackbar(context.getString(R.string.error_no_share_app))
@@ -490,78 +470,14 @@ private fun DownscaleSetting(
 }
 
 @Composable
-private fun Section(title: String, subtitle: String? = null, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-        if (subtitle != null) {
-            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        content()
-    }
-}
-
-@Composable
-private fun NumberField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    suffix: String,
-    modifier: Modifier = Modifier,
-    error: String? = null,
-    hint: String? = null,
-) {
-    val message = error ?: hint
-    val supportingText: (@Composable () -> Unit)? = if (message == null) null else {
-        { Text(message) }
-    }
-    OutlinedTextField(
-        value = value,
-        onValueChange = { typed -> onValueChange(typed.filter(Char::isDigit).take(ResizeOptions.MAX_DIGITS)) },
-        label = { Text(label) },
-        suffix = { Text(suffix) },
-        supportingText = supportingText,
-        isError = error != null,
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-        modifier = modifier,
-    )
-}
-
-@Composable
 private fun ProcessingDialog(progress: TargetProgress?, onCancel: () -> Unit) {
-    Dialog(
-        onDismissRequest = onCancel,
-        properties = DialogProperties(dismissOnClickOutside = false),
-    ) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ) {
-            Column(
-                modifier = Modifier.padding(Spacing.large),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.medium),
-            ) {
-                CircularProgressIndicator()
-                Text(stringResource(R.string.resize_processing_title), style = MaterialTheme.typography.titleLarge)
-                val detail = when {
-                    progress == null -> stringResource(R.string.resize_processing_reading)
-                    progress.quality != null ->
-                        stringResource(R.string.resize_processing_trying, progress.size.toString(), progress.quality)
-                    else -> stringResource(R.string.resize_processing_trying_png, progress.size.toString())
-                }
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = detail,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-                TextButton(onClick = onCancel) { Text(stringResource(R.string.resize_cancel)) }
-            }
-        }
+    val detail = when {
+        progress == null -> stringResource(R.string.resize_processing_reading)
+        progress.quality != null ->
+            stringResource(R.string.resize_processing_trying, progress.size.toString(), progress.quality)
+        else -> stringResource(R.string.resize_processing_trying_png, progress.size.toString())
     }
+    ProgressDialog(stringResource(R.string.resize_processing_title), detail, onCancel)
 }
 
 private class ProblemText(
