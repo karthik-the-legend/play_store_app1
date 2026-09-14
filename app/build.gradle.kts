@@ -47,6 +47,8 @@ android {
         // English ships first; Hindi and Kannada are the next translations. Filtering here
         // also drops the dozens of languages AndroidX bundles, which we can't use anyway.
         localeFilters += listOf("en", "hi", "kn")
+        // MediaPipe memory-maps its model, which only works when the asset isn't compressed.
+        noCompress += "tflite"
     }
 
     bundle {
@@ -84,6 +86,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.exifinterface)
     implementation(libs.coil.compose)
+    implementation(libs.mediapipe.tasks.vision)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

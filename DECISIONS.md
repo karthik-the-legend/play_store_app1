@@ -157,6 +157,64 @@ MediaPipe, AdMob, UMP, Play Billing.
   the ink. The user sees the band in the preview and can crop, raise or lower ink strength, or
   retake. The tips on the start screen say to avoid shadows across the page.
 
+## Passport photo (Milestone 4)
+
+### Background removal: measured, not guessed
+
+Both candidates were added to a throwaway branch, built as release bundles (R8 on) and measured
+with `bundletool get-size total --dimensions=ABI`. Native libraries were checked for 16 KB
+page-size support by reading the ELF `PT_LOAD` alignment.
+
+| | arm64-v8a download | armeabi-v7a | x86_64 | Native library | 16 KB pages | Model |
+|---|---|---|---|---|---|---|
+| Milestone 3 baseline | ~1.64 MB | — | — | — | yes | — |
+| ML Kit Selfie Segmentation 16.0.0-beta6 | 7.79 MB (+6.2) | 6.91 MB | 7.52 MB | `libxeno_native.so` 21 MB uncompressed | yes (16384) | selfie 256×256, 243 KB |
+| MediaPipe tasks-vision 1.0.0 + `selfie_segmenter.tflite` | 6.92 MB (+5.3) | 6.15 MB | 7.67 MB | `libmediapipe_tasks_jni.so` 10.8 MB uncompressed | yes (16384) | selfie 256×256, 244 KB |
+
+- **ML Kit Subject Segmentation is ruled out:** it downloads its model through Play services on
+  first use, which fails offline.
+- **MediaPipe's multiclass selfie model** (better hair) is 16 MB, which is too big.
+- **Chosen: MediaPipe tasks-vision 1.0.0** with `selfie_segmenter.tflite` (decided 2026-09-14;
+  the app goes from about 1.6 MB to about 6.9 MB on arm64). The model is stored uncompressed so
+  MediaPipe can memory-map it.
+- **Both options run the same small selfie model**, so accuracy is the same. The difference is
+  size (MediaPipe is about 0.9 MB smaller on arm64), stability (MediaPipe is 1.0.0; ML Kit
+  Selfie is still a beta) and room to grow: MediaPipe's runtime can add a 224 KB face detector
+  for better auto-framing.
+
+### Library-independent parts
+
+- **Presets are exact at 300 DPI:** India and Schengen 35×45 mm = 413×531 px; US 2×2 in =
+  600×600 px; 51×51 mm = 602×602 px. Custom sizes accept mm, inches (with a DPI) or pixels.
+- **Head guides** (crown, eye line, chin) follow ICAO for 35×45 mm and the US State Department
+  rules for 2×2 in. They're guides, not certification.
+- **Auto-framing reads the person's silhouette:** the crown is the top of the mask. If the
+  silhouette narrows into a neck near where the upper head's width says the chin should be, the
+  chin is placed 12% of the crown-to-jaw height below that narrowest row. Seen from the front,
+  the chin sits in front of the neck, so the narrowest row is the jaw line (measured on a
+  short-haired test portrait). Long hair usually hides the neck; the head height then comes from
+  the upper head's width. The photo is placed so the crown and chin sit on the guide lines, and
+  the user drags and pinches from there.
+- **Placement is stored in source pixels** (the point at the frame's centre and the visible
+  height), so switching size presets keeps the head in place.
+- **Touch-ups** are a list of brush strokes replayed on the model's mask, so undo is exact. The
+  brush has a solid core and a soft edge, and dabs are spaced a quarter of the radius apart. The
+  model's confidence goes through a smoothstep (0.35–0.65) to sharpen its soft edge.
+- **Rendering halves the cut-out** before the final bilinear scale when shrinking a lot,
+  otherwise hair edges alias.
+- **Print sheet:** 4×6 in at 300 DPI (1200×1800 px). Photos keep their exact pixel size. Spacing
+  is a 30 px margin and 24 px gaps when the photos fit that way; otherwise they tile edge to
+  edge with shared cut lines (six 2×2 in photos fill the sheet exactly). Eight Indian photos fit
+  with gaps.
+- **Watermark:** "Made with FormKit", small, in the bottom margin only, never over a photo. A
+  sheet tiled edge to edge has no margin and so no watermark. Pro and rewarded ads remove it in
+  Milestone 6.
+- **Printing at true size:** JPEGs get a 300 DPI JFIF density, edited in place so the byte count
+  and any KB limit are unchanged. The sheet can also be a PDF at its physical page size, built
+  with Android's own `PdfDocument` (no library).
+- **PDFs are saved to Documents/FormKit** through MediaStore, the same way images are saved to
+  Pictures/FormKit.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
@@ -167,6 +225,7 @@ download size Play would serve, which is what the 25 MB budget refers to.
 | 1 – skeleton | 3.32 MB | 1.13–1.14 MiB (1,185,341–1,195,718 bytes) | Compose, Material 3, Hilt, Navigation, DataStore. No native code yet. |
 | 2 – resize to KB | 4.40 MB | 1.51–1.52 MiB (1,578,216–1,591,301 bytes) | +Coil 3, ExifInterface, kotlinx-serialization-json: about +0.4 MB. |
 | 3 – signature | 4.56 MB | 1.56–1.57 MiB (1,636,714–1,650,704 bytes) | Cleanup is plain Kotlin, no new libraries: about +58 KB. |
+| 4 – passport photo | 26.50 MB | 5.93–7.86 MiB (6,220,787–8,243,468 bytes) | +MediaPipe tasks-vision and the 244 KB selfie model. By ABI: armeabi-v7a 6.22 MB, arm64-v8a 6.99–7.00 MB, x86_64 7.75 MB, x86 8.23 MB. The AAB holds every ABI's native library, so it's much bigger than any download. |
 
 ## Test environment notes
 
@@ -197,9 +256,7 @@ These affect later milestones. They're recorded here so they don't get silently 
    for PNG. The UI will say so.
 6. **Camera** uses the system camera app (`ACTION_IMAGE_CAPTURE`, no permission) until Scan to
    PDF needs CameraX.
-7. **Background removal:** ML Kit *Subject* Segmentation is ruled out because it downloads its
-   model on first use, which fails offline. ML Kit Selfie Segmentation and MediaPipe will be
-   measured in Milestone 4.
+7. **Background removal:** settled in Milestone 4 (MediaPipe, see above).
 8. **PDF:** Images→PDF and Compress use a small in-house writer that embeds JPEGs directly.
    PdfBox is only for merge, split and password-protected files, and needs approval first
    because it's likely over 3 MB.

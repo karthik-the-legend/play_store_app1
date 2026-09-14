@@ -214,6 +214,84 @@
     <string name="signature_problem_no_ink_body">The pad is empty. Sign inside it, then try again.</string>
     <string name="signature_problem_unexpected_body">Try again, or start over with a new photo or drawing.</string>
 
+    <!-- Passport photo: start -->
+    <string name="passport_photo_title">Start with a portrait</string>
+    <string name="passport_photo_body">Face the camera with your shoulders in view. Any background works: FormKit removes it on your phone.</string>
+    <string name="passport_take_photo">Take photo</string>
+    <string name="passport_choose_photo">Choose photo</string>
+    <string name="passport_tips_title">For a photo that gets accepted</string>
+    <string name="passport_tips_body">Look straight at the camera with a neutral expression, eyes open and hair off your face. Use even light with no shadows on your face, and take off glasses if the form asks.</string>
+
+    <!-- Passport photo: editor -->
+    <string name="passport_preparing">Removing the background…</string>
+    <string name="cd_passport_preview">Passport photo preview with guides for the top of the head, eyes and chin</string>
+    <string name="passport_mode_position">Position</string>
+    <string name="passport_mode_touch_up">Touch up</string>
+    <string name="passport_position_hint">Drag and pinch the photo so the top of the head and the chin sit on the outer dashed lines and the eyes on the middle one.</string>
+    <string name="passport_auto_fit">Auto-fit</string>
+    <string name="passport_touch_up_hint">Paint over leftover background to erase it, or restore hair the removal missed. Pinch with two fingers to zoom in.</string>
+    <string name="passport_brush_erase">Erase</string>
+    <string name="passport_brush_restore">Restore</string>
+    <string name="passport_brush_size">Brush size</string>
+    <string name="cd_undo_touch_up">Undo last touch-up</string>
+    <string name="passport_clear_touch_ups">Undo all</string>
+    <string name="passport_no_person">No person was found in this photo. You can still position it and use Touch up, or choose a clearer portrait.</string>
+    <string name="passport_section_size">Photo size</string>
+    <string name="passport_size_details">%1$s px at %2$d DPI</string>
+    <string name="passport_size_india">India 35×45 mm</string>
+    <string name="passport_size_us">US 2×2 in</string>
+    <string name="passport_size_51">51×51 mm</string>
+    <string name="passport_size_schengen">Schengen 35×45 mm</string>
+    <string name="passport_unit_mm">mm</string>
+    <string name="passport_unit_in">in</string>
+    <string name="passport_dpi">DPI</string>
+    <string name="passport_custom_hint">Enter the size from the form\'s instructions.</string>
+    <string name="passport_error_dpi">Use a DPI between %1$d and %2$d.</string>
+    <string name="passport_error_too_large">Use a smaller size. The largest is %1$d px on each side.</string>
+    <string name="passport_section_background">Background colour</string>
+    <string name="passport_backdrop_white">White</string>
+    <string name="passport_backdrop_light_blue">Light blue</string>
+    <string name="passport_backdrop_light_grey">Light grey</string>
+    <string name="passport_backdrop_red">Red</string>
+    <string name="passport_backdrop_custom">Custom</string>
+    <string name="passport_color_title">Custom colour</string>
+    <string name="passport_color_hue">Hue</string>
+    <string name="passport_color_saturation">Saturation</string>
+    <string name="passport_color_brightness">Brightness</string>
+    <string name="passport_color_use">Use colour</string>
+    <string name="passport_section_limit">File size limit</string>
+    <string name="passport_limit_hint">Many forms cap photo uploads somewhere between 20 KB and 200 KB.</string>
+    <string name="passport_create">Create photo</string>
+    <string name="passport_processing">Creating your photo…</string>
+
+    <!-- Passport photo: results -->
+    <string name="passport_result_title">Photo ready</string>
+    <string name="passport_result_details">%1$s px · %2$s · %3$d DPI</string>
+    <string name="passport_result_physical_mm">%1$s×%2$s mm</string>
+    <string name="cd_passport_result">Finished passport photo</string>
+    <string name="passport_sheet_card_title">Print copies</string>
+    <string name="passport_sheet_card_body">Put several copies on one 4×6 inch sheet for a photo shop or a home printer.</string>
+    <string name="passport_sheet_card_action">Make a print sheet</string>
+    <string name="passport_sheet_title">Print sheet</string>
+    <string name="passport_sheet_count">Copies</string>
+    <string name="passport_sheet_format">File type</string>
+    <string name="format_pdf" translatable="false">PDF</string>
+    <string name="passport_sheet_jpeg_hint">Opens in any gallery app. Print it as a 4×6 inch photo.</string>
+    <string name="passport_sheet_pdf_hint">Prints at exactly 4×6 inches from most printers.</string>
+    <string name="passport_sheet_watermark_note">A small \"Made with FormKit\" note is printed in the margin, away from the photos.</string>
+    <string name="passport_sheet_edge_note">The photos fill the sheet edge to edge. Cut along the faint lines.</string>
+    <string name="passport_sheet_create">Make sheet</string>
+    <string name="passport_sheet_processing">Making your print sheet…</string>
+    <string name="passport_watermark">Made with FormKit</string>
+    <string name="cd_sheet_preview">Print sheet preview</string>
+    <string name="passport_sheet_result_title">Sheet ready</string>
+    <string name="passport_sheet_result_details">%1$d photos · 4×6 in · %2$s</string>
+    <string name="passport_saved_documents">Saved as %1$s in Documents/FormKit</string>
+    <string name="export_saved_indicator_documents">Saved to Documents/FormKit</string>
+    <string name="passport_share_chooser">Share passport photo</string>
+    <string name="passport_problem_sheet_title">These photos don\'t fit on a 4×6 sheet</string>
+    <string name="passport_problem_sheet_body">Choose fewer copies or a smaller photo size.</string>
+
     <!-- Recent files -->
     <string name="recent_title">Recent files</string>
     <string name="recent_record_details">%1$s · %2$s</string>

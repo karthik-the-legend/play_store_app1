@@ -44,10 +44,11 @@ fun ExportActionsBar(
     onSave: () -> Unit,
     onShare: () -> Unit,
     onDoAnother: () -> Unit,
+    savedLabel: String = stringResource(R.string.export_saved_indicator),
 ) {
     BottomActionBar {
         if (isSaved) {
-            SavedIndicator()
+            SavedIndicator(savedLabel)
         } else {
             PrimaryButton(
                 text = stringResource(R.string.export_save),
@@ -82,7 +83,7 @@ fun ExportActionsBar(
 }
 
 @Composable
-private fun SavedIndicator() {
+private fun SavedIndicator(label: String) {
     Surface(
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.secondaryContainer,
@@ -97,7 +98,7 @@ private fun SavedIndicator() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(painterResource(R.drawable.ic_check_circle), contentDescription = null, modifier = Modifier.size(20.dp))
-            Text(stringResource(R.string.export_saved_indicator), style = MaterialTheme.typography.labelLarge)
+            Text(label, style = MaterialTheme.typography.labelLarge)
         }
     }
 }

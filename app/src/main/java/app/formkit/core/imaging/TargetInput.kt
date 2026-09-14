@@ -9,6 +9,7 @@ enum class OptionsError {
     DimensionsMissing,
     DimensionsTooSmall,
     DimensionsTooLarge,
+    DpiInvalid,
 }
 
 sealed interface OptionsValidation {

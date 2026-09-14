@@ -22,8 +22,10 @@ espresso = "3.7.0"
 coil = "3.6.2"
 exifinterface = "1.4.2"
 kotlinxSerialization = "1.11.0"
+mediapipeTasks = "1.0.0"
 
 [libraries]
+mediapipe-tasks-vision = { group = "com.google.mediapipe", name = "tasks-vision", version.ref = "mediapipeTasks" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }

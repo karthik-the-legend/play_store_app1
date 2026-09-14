@@ -37,21 +37,11 @@ class FileExporter @Inject constructor(
      * app can never hand over a file that breaks the limit the user asked for.
      */
     suspend fun saveImage(source: File, displayName: String, mimeType: String, maxBytes: Long?): ExportedFile =
-        withContext(ioDispatcher) {
-            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                insertScoped(source, displayName, mimeType)
-            } else {
-                insertLegacy(source, displayName, mimeType)
-            }
-            try {
-                val onDisk = sizeOnDisk(uri)
-                if (maxBytes != null && onDisk > maxBytes) throw ExportOverLimitException(onDisk, maxBytes)
-                ExportedFile(uri, queryDisplayName(uri) ?: displayName, onDisk)
-            } catch (e: Throwable) {
-                runCatching { resolver.delete(uri, null, null) }
-                throw e
-            }
-        }
+        save(source, displayName, mimeType, maxBytes, Destination.Pictures)
+
+    /** Copies [source] (a PDF, say) into Documents/FormKit. */
+    suspend fun saveDocument(source: File, displayName: String, mimeType: String): ExportedFile =
+        save(source, displayName, mimeType, maxBytes = null, destination = Destination.Documents)
 
     /** A content URI other apps can read, for sharing a file that hasn't been saved. */
     fun shareableUri(file: File): Uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
@@ -80,14 +70,44 @@ class FileExporter @Inject constructor(
         }
     }
 
-    private fun insertScoped(source: File, displayName: String, mimeType: String): Uri {
+    private enum class Destination(val publicDirectory: String) {
+        Pictures(Environment.DIRECTORY_PICTURES),
+        Documents(Environment.DIRECTORY_DOCUMENTS),
+    }
+
+    private suspend fun save(
+        source: File,
+        displayName: String,
+        mimeType: String,
+        maxBytes: Long?,
+        destination: Destination,
+    ): ExportedFile = withContext(ioDispatcher) {
+        val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            insertScoped(source, displayName, mimeType, destination)
+        } else {
+            insertLegacy(source, displayName, mimeType, destination)
+        }
+        try {
+            val onDisk = sizeOnDisk(uri)
+            if (maxBytes != null && onDisk > maxBytes) throw ExportOverLimitException(onDisk, maxBytes)
+            ExportedFile(uri, queryDisplayName(uri) ?: displayName, onDisk)
+        } catch (e: Throwable) {
+            runCatching { resolver.delete(uri, null, null) }
+            throw e
+        }
+    }
+
+    private fun insertScoped(source: File, displayName: String, mimeType: String, destination: Destination): Uri {
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/$FOLDER")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "${destination.publicDirectory}/$FOLDER")
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
-        val collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val collection = when (destination) {
+            Destination.Pictures -> MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            Destination.Documents -> MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        }
         val uri = resolver.insert(collection, values) ?: throw IOException("MediaStore refused the new file")
         try {
             val output = resolver.openOutputStream(uri, "w") ?: throw IOException("No output stream for $uri")
@@ -100,9 +120,9 @@ class FileExporter @Inject constructor(
         }
     }
 
-    @Suppress("DEPRECATION") // DATA and the public directory are the only way on Android 9 and older.
-    private fun insertLegacy(source: File, displayName: String, mimeType: String): Uri {
-        val directory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), FOLDER)
+    @Suppress("DEPRECATION") // DATA and the public directories are the only way on Android 9 and older.
+    private fun insertLegacy(source: File, displayName: String, mimeType: String, destination: Destination): Uri {
+        val directory = File(Environment.getExternalStoragePublicDirectory(destination.publicDirectory), FOLDER)
         if (!directory.isDirectory && !directory.mkdirs()) throw IOException("Couldn't create $directory")
         val target = uniqueFile(directory, displayName)
         source.copyTo(target)
@@ -112,7 +132,11 @@ class FileExporter @Inject constructor(
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
             put(MediaStore.MediaColumns.SIZE, target.length())
         }
-        return resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        val collection = when (destination) {
+            Destination.Pictures -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            Destination.Documents -> MediaStore.Files.getContentUri("external")
+        }
+        return resolver.insert(collection, values)
             ?: run {
                 target.delete()
                 throw IOException("MediaStore refused ${target.name}")

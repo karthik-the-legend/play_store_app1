@@ -15,6 +15,7 @@ import app.formkit.feature.home.HomeScreen
 import app.formkit.feature.home.Tool
 import app.formkit.feature.home.ToolPlaceholderScreen
 import app.formkit.feature.onboarding.OnboardingScreen
+import app.formkit.feature.passport.PassportRoute
 import app.formkit.feature.recent.RecentFilesScreen
 import app.formkit.feature.resize.ResizeRoute
 import app.formkit.feature.settings.SettingsScreen
@@ -69,6 +70,7 @@ fun FormKitNavHost(
             when (val tool = entry.toRoute<ToolRoute>().tool) {
                 Tool.ResizeKb -> ResizeRoute(onBack = onBack)
                 Tool.Signature -> SignatureRoute(onBack = onBack)
+                Tool.PassportPhoto -> PassportRoute(onBack = onBack)
                 else -> ToolPlaceholderScreen(tool = tool, onBack = onBack)
             }
         }

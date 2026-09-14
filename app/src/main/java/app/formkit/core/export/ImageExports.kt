@@ -15,7 +15,7 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Saving and sharing a finished image, the same way from every tool. */
+/** Saving and sharing a finished file, the same way from every tool. */
 @Singleton
 class ImageExports @Inject constructor(
     private val exporter: FileExporter,
@@ -26,18 +26,14 @@ class ImageExports @Inject constructor(
     /** Saves to Pictures/FormKit, checks the size on disk, and adds it to Recent files. */
     suspend fun save(file: File, displayName: String, format: OutputFormat, maxBytes: Long?, size: PixelSize): ExportedFile {
         val exported = exporter.saveImage(file, displayName, format.mimeType, maxBytes)
-        history.add(
-            ExportRecord(
-                id = UUID.randomUUID().toString(),
-                uri = exported.uri.toString(),
-                displayName = exported.displayName,
-                mimeType = format.mimeType,
-                sizeBytes = exported.sizeBytes,
-                width = size.width,
-                height = size.height,
-                createdAtMillis = System.currentTimeMillis(),
-            ),
-        )
+        record(exported, format.mimeType, size)
+        return exported
+    }
+
+    /** Saves a document (a PDF, say) to Documents/FormKit and adds it to Recent files. */
+    suspend fun saveDocument(file: File, displayName: String, mimeType: String, size: PixelSize?): ExportedFile {
+        val exported = exporter.saveDocument(file, displayName, mimeType)
+        record(exported, mimeType, size)
         return exported
     }
 
@@ -47,5 +43,20 @@ class ImageExports @Inject constructor(
         named.parentFile?.mkdirs()
         file.copyTo(named, overwrite = true)
         exporter.shareableUri(named)
+    }
+
+    private suspend fun record(exported: ExportedFile, mimeType: String, size: PixelSize?) {
+        history.add(
+            ExportRecord(
+                id = UUID.randomUUID().toString(),
+                uri = exported.uri.toString(),
+                displayName = exported.displayName,
+                mimeType = mimeType,
+                sizeBytes = exported.sizeBytes,
+                width = size?.width,
+                height = size?.height,
+                createdAtMillis = System.currentTimeMillis(),
+            ),
+        )
     }
 }
