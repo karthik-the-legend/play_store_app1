@@ -81,6 +81,9 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.exifinterface)
+    implementation(libs.coil.compose)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

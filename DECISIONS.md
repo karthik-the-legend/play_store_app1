@@ -72,6 +72,50 @@ MediaPipe, AdMob, UMP, Play Billing.
   PDFs to `Documents/FormKit`. A custom folder would need the system folder picker (Storage
   Access Framework), which adds friction. We can revisit if users ask.
 
+## Resize to exact KB (Milestone 2)
+
+- **The algorithm differs from the spec in "allow downscale" mode.** The spec's fixed ×0.9 steps,
+  at most 12 of them, can only reduce each side to 28%. A 12 MP photo at quality 1 is still far
+  above 20 KB at that size, so the spec's own acceptance test could never pass. It also needed
+  up to 12 × 8 full-resolution encodes. `SizeTargeter` instead:
+  1. encodes a 640px probe at quality 75 to estimate how many pixels fit, and starts there;
+  2. at each size, binary-searches quality 50–100 (quality 1–100 at the smallest size or on the
+     last attempt), keeping the largest result under the limit;
+  3. if nothing fits, shrinks by a step estimated from how far over it was (between ×0.3 and
+     ×0.9), never below a 100px short edge, at most 12 attempts;
+  4. if the first fit is under 80% of the limit, grows once to land closer to it.
+  "Keep dimensions" and "exact dimensions" follow the spec's search (quality 1–100, 8 steps).
+- **Every quality search starts by encoding the lowest allowed quality.** If that's already over
+  the limit, the answer is immediate. Found on the emulator: a 4000×3000 photo at 20 KB with
+  dimensions kept took ~15 s of full-resolution encodes just to say "can't reach 20 KB". Now it
+  takes one encode. It costs at most one extra encode when the target is reachable.
+- **Quality floor of 50 while downscaling.** Given the choice, a slightly smaller photo at
+  decent quality beats a full-size photo at quality 5. That matters when it's your face on an
+  admit card.
+- **Exact dimensions center-crop** to the target shape before scaling, instead of stretching.
+  The result screen says so. A manual crop could come later.
+- **JPEG from a transparent image** is flattened onto white first. Otherwise transparent areas
+  turn black.
+- **Minimum size:** if the best result under the maximum is still below the minimum, the user
+  is told the largest achievable size. We don't pad files with junk bytes to fake a size.
+- **Decoding** uses `BitmapFactory` with `inSampleSize` (long edge ≤ 4096) plus `ExifInterface`
+  for rotation on every API level. One code path; HEIC works from Android 9, the version where
+  the platform decoder added it.
+- **Exported files** go to MediaStore `Pictures/FormKit`. The file size is read back from disk
+  after writing, and the file is deleted if it's over the limit. On Android 9 and older this
+  needs `WRITE_EXTERNAL_STORAGE` (declared with `maxSdkVersion=28`), requested only when saving.
+- **Export history** is a small JSON-backed DataStore (no Room). Entries whose file was deleted
+  outside the app are dropped when Recent files opens.
+- **Coil 3** loads thumbnails and previews (local files and content URIs only, no network module).
+- **Export file names** are "<original name>_<size>KB.jpg", e.g. `IMG_2031_48KB.jpg`. The Android
+  Photo Picker hides real file names and reports media IDs like `19.jpg`; names that are only
+  digits become `FormKit_48KB.jpg`. MediaStore adds " (1)" etc. when a name is already taken.
+- **Temporary files:** each resize session works in its own `cache/resize-<time>/` folder. It's
+  deleted when the user leaves the tool or taps Do another, and `CacheJanitor` removes any left
+  over after a crash once they're a day old. The spec says to clear temp files right after
+  export, but that would break Back to settings and Share after saving, so cleanup happens when
+  the session ends instead.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
@@ -80,6 +124,7 @@ download size Play would serve, which is what the 25 MB budget refers to.
 | Milestone | AAB file | Download size (min–max across devices) | Notes |
 |---|---|---|---|
 | 1 – skeleton | 3.32 MB | 1.13–1.14 MiB (1,185,341–1,195,718 bytes) | Compose, Material 3, Hilt, Navigation, DataStore. No native code yet. |
+| 2 – resize to KB | 4.40 MB | 1.51–1.52 MiB (1,578,216–1,591,301 bytes) | +Coil 3, ExifInterface, kotlinx-serialization-json: about +0.4 MB. |
 
 ## Test environment notes
 

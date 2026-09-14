@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Tool workspaces live directly under the cache directory. -->
+    <cache-path
+        name="work"
+        path="." />
+</paths>

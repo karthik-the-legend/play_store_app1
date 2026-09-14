@@ -53,8 +53,114 @@
     <string name="onboarding_ill_target">Limit: %1$s</string>
     <string name="onboarding_ill_ready">Ready to upload</string>
 
+    <!-- File sizes: 1 KB = 1000 bytes throughout the app -->
+    <string name="unit_bytes">%1$s B</string>
+    <string name="unit_kilobytes">%1$s KB</string>
+    <string name="unit_megabytes">%1$s MB</string>
+    <string name="unit_kb_suffix">KB</string>
+    <string name="unit_px_suffix">px</string>
+    <string name="format_jpeg" translatable="false">JPEG</string>
+    <string name="format_png" translatable="false">PNG</string>
+    <string name="ok">OK</string>
+    <string name="error_no_share_app">No app on this phone can receive this file. Try again after installing a messaging or email app.</string>
+
+    <!-- Resize: editor -->
+    <string name="resize_choose_photo">Choose a photo</string>
+    <string name="resize_action">Resize to %1$s</string>
+    <string name="resize_action_generic">Resize</string>
+    <string name="resize_source_empty_title">Pick the photo to resize</string>
+    <string name="resize_source_empty_body">JPEG, PNG, WebP or HEIC. It never leaves your phone.</string>
+    <string name="resize_source_opening">Opening photo…</string>
+    <string name="resize_source_details">%1$s · %2$s</string>
+    <string name="resize_change_photo">Change</string>
+    <string name="cd_original_photo">Original photo</string>
+    <string name="cd_resized_photo">Resized photo</string>
+    <string name="resize_section_size">Size limit</string>
+    <string name="resize_section_size_hint">The file will be no bigger than this.</string>
+    <string name="resize_custom">Custom</string>
+    <string name="resize_custom_size_label">Size limit</string>
+    <string name="resize_custom_size_hint">Enter the limit from the form, in KB</string>
+    <string name="resize_error_size_too_small">Use at least %1$d KB</string>
+    <string name="resize_error_size_too_large">Use %1$d KB or less</string>
+    <string name="resize_minimum_add">Add a minimum size</string>
+    <string name="resize_minimum_remove">Remove minimum</string>
+    <string name="resize_minimum_label">Minimum size</string>
+    <string name="resize_minimum_hint">Some forms also reject files that are too small.</string>
+    <string name="resize_error_minimum_too_small">Use at least 1 KB</string>
+    <string name="resize_error_minimum_above_max">Must be smaller than the size limit</string>
+    <string name="resize_section_dimensions">Dimensions</string>
+    <string name="resize_section_dimensions_hint">Forms often ask for an exact size in pixels.</string>
+    <string name="resize_dimension_original">Keep original</string>
+    <string name="resize_dimension_passport">%1$s passport</string>
+    <string name="resize_width">Width</string>
+    <string name="resize_height">Height</string>
+    <string name="resize_dimensions_hint">Enter the width and height from the form.</string>
+    <string name="resize_error_dimensions_too_small">Use at least %1$d px on each side.</string>
+    <string name="resize_error_dimensions_too_large">Use %1$d px or less on each side.</string>
+    <string name="resize_crop_note">The photo is cropped from the centre to fit this shape.</string>
+    <string name="resize_section_format">Format</string>
+    <string name="resize_format_jpeg_hint">Best for photos. Most forms expect JPEG.</string>
+    <string name="resize_format_png_hint">PNG can\'t lower its quality to save space, so only smaller dimensions reduce its size.</string>
+    <string name="resize_downscale_title">Allow smaller dimensions</string>
+    <string name="resize_downscale_hint">Shrinks the photo when lowering quality alone can\'t reach the size.</string>
+    <string name="resize_downscale_off_exact">Off, because you chose exact dimensions.</string>
+
+    <!-- Resize: processing -->
+    <string name="resize_processing_title">Resizing…</string>
+    <string name="resize_processing_reading">Reading your photo…</string>
+    <string name="resize_processing_trying">Trying %1$s at quality %2$d</string>
+    <string name="resize_processing_trying_png">Trying %1$s</string>
+    <string name="resize_cancel">Cancel</string>
+
+    <!-- Resize: problems -->
+    <string name="resize_problem_too_large_title">Can\'t reach %1$s</string>
+    <string name="resize_problem_too_large_downscale">The smallest this photo gets at %1$s is %2$s. Allow smaller dimensions to go lower?</string>
+    <string name="resize_problem_too_large_fixed">The smallest this photo gets at %1$s is %2$s. Choose a bigger size limit or smaller dimensions.</string>
+    <string name="resize_problem_allow_downscale">Allow smaller dimensions</string>
+    <string name="resize_problem_not_now">Not now</string>
+    <string name="resize_problem_too_small_title">Can\'t reach the %1$s minimum</string>
+    <string name="resize_problem_too_small_body">The largest this photo gets at %1$s is %2$s. Choose larger dimensions or a lower minimum.</string>
+    <string name="resize_problem_unreadable_title">Couldn\'t open this photo</string>
+    <string name="resize_problem_unreadable_body">The file may be damaged, or in a format FormKit can\'t read. Try a JPEG, PNG, WebP or HEIC photo.</string>
+    <string name="resize_problem_memory_title">This photo is too big for this phone</string>
+    <string name="resize_problem_memory_body">Close other apps and try again, or choose a smaller photo.</string>
+    <string name="resize_problem_save_title">Couldn\'t save the file</string>
+    <string name="resize_problem_save_body">Check that your phone has free storage space, then try again. You can also use Share instead.</string>
+    <string name="resize_problem_unexpected_title">Something went wrong</string>
+    <string name="resize_problem_unexpected_body">Try again, or choose a different photo.</string>
+
+    <!-- Resize: result -->
+    <string name="resize_result_title">Ready to upload</string>
+    <string name="resize_result_under_limit">Under your %1$s limit</string>
+    <string name="resize_result_jpeg_quality">JPEG · quality %1$d</string>
+    <string name="resize_result_before">Before</string>
+    <string name="resize_result_after">After</string>
+    <string name="resize_stat_size">File size</string>
+    <string name="resize_stat_dimensions">Dimensions</string>
+    <string name="resize_stat_reduction">Reduction</string>
+    <string name="resize_stat_change">%1$s → %2$s</string>
+    <string name="resize_stat_smaller">%1$d%% smaller</string>
+    <string name="resize_stat_not_smaller">Not smaller than the original</string>
+    <string name="resize_result_cropped">Cropped from the centre to %1$s.</string>
+    <string name="resize_save">Save to phone</string>
+    <string name="resize_saved_indicator">Saved to Pictures/FormKit</string>
+    <string name="resize_share">Share</string>
+    <string name="resize_do_another">Do another</string>
+    <string name="resize_saved">Saved as %1$s in Pictures/FormKit</string>
+    <string name="resize_share_chooser">Share photo</string>
+    <string name="resize_storage_permission_denied">Saving needs storage access on this version of Android. You can still use Share to send the photo.</string>
+
     <!-- Recent files -->
     <string name="recent_title">Recent files</string>
+    <string name="recent_record_details">%1$s · %2$s</string>
+    <string name="cd_share_file">Share %1$s</string>
+    <string name="cd_delete_file">Delete %1$s</string>
+    <string name="recent_delete_title">Delete this file?</string>
+    <string name="recent_delete_body">%1$s will be removed from your phone.</string>
+    <string name="recent_delete_confirm">Delete</string>
+    <string name="recent_deleted">File deleted</string>
+    <string name="recent_removed_from_list">Removed from the list. FormKit couldn\'t delete the file itself, so remove it in your Gallery app.</string>
+    <string name="recent_share_chooser">Share file</string>
     <string name="recent_empty_title">No files yet</string>
     <string name="recent_empty_body">Files you save from any tool show up here, so you can share them again in a tap.</string>
     <string name="recent_empty_action">Resize a photo</string>

@@ -16,6 +16,7 @@ import app.formkit.feature.home.Tool
 import app.formkit.feature.home.ToolPlaceholderScreen
 import app.formkit.feature.onboarding.OnboardingScreen
 import app.formkit.feature.recent.RecentFilesScreen
+import app.formkit.feature.resize.ResizeRoute
 import app.formkit.feature.settings.SettingsScreen
 import kotlinx.serialization.Serializable
 
@@ -63,10 +64,11 @@ fun FormKitNavHost(
         }
 
         composable<ToolRoute> { entry ->
-            ToolPlaceholderScreen(
-                tool = entry.toRoute<ToolRoute>().tool,
-                onBack = dropUnlessResumed { navController.popBackStack() },
-            )
+            val onBack = dropUnlessResumed { navController.popBackStack() }
+            when (val tool = entry.toRoute<ToolRoute>().tool) {
+                Tool.ResizeKb -> ResizeRoute(onBack = onBack)
+                else -> ToolPlaceholderScreen(tool = tool, onBack = onBack)
+            }
         }
 
         composable<RecentFilesRoute> {

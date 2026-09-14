@@ -3,7 +3,6 @@ package app.formkit.feature.settings
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.text.format.Formatter
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,6 +49,7 @@ import app.formkit.BuildConfig
 import app.formkit.R
 import app.formkit.core.settings.ThemeMode
 import app.formkit.core.ui.components.BackTopBar
+import app.formkit.core.ui.formatSize
 import app.formkit.core.ui.theme.Spacing
 import kotlinx.coroutines.launch
 
@@ -67,7 +67,7 @@ fun SettingsScreen(
             when (event) {
                 is SettingsEvent.TempFilesCleared -> snackbarHostState.showSnackbar(
                     if (event.freedBytes > 0) {
-                        context.getString(R.string.settings_temp_files_cleared, Formatter.formatShortFileSize(context, event.freedBytes))
+                        context.getString(R.string.settings_temp_files_cleared, context.formatSize(event.freedBytes))
                     } else {
                         context.getString(R.string.settings_temp_files_nothing)
                     },
@@ -131,7 +131,7 @@ private fun SettingsContent(
             SettingsItem(
                 title = stringResource(R.string.settings_temp_files),
                 supporting = uiState.tempFilesBytes
-                    ?.let { stringResource(R.string.settings_temp_files_value, Formatter.formatShortFileSize(context, it)) }
+                    ?.let { stringResource(R.string.settings_temp_files_value, context.formatSize(it)) }
                     ?: stringResource(R.string.settings_temp_files_calculating),
                 trailing = {
                     TextButton(onClick = onClearTempFiles, enabled = !uiState.isClearing) {
