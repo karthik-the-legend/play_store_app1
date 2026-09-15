@@ -292,6 +292,152 @@
     <string name="passport_problem_sheet_title">These photos don\'t fit on a 4×6 sheet</string>
     <string name="passport_problem_sheet_body">Choose fewer copies or a smaller photo size.</string>
 
+    <!-- PDF tools: shared -->
+    <plurals name="pdf_page_count">
+        <item quantity="one">%d page</item>
+        <item quantity="other">%d pages</item>
+    </plurals>
+    <string name="pdf_file_details">%1$s · %2$s</string>
+    <string name="pdf_status_locked">Password protected</string>
+    <string name="pdf_enter_password">Enter password</string>
+    <string name="pdf_status_certificate">This PDF is locked to a digital certificate, not a password. FormKit can\'t open it. Ask the sender for an unlocked copy.</string>
+    <string name="pdf_status_unreadable">This file couldn\'t be read as a PDF. It may be damaged. Try opening it in another app, or pick a different file.</string>
+    <string name="pdf_unlocked_note">Unlocked. The new file won\'t have a password.</string>
+    <string name="pdf_password_title">Enter password</string>
+    <string name="pdf_password_body">%1$s is password protected. Bank statements often use your date of birth or customer ID.</string>
+    <string name="pdf_password_label">Password</string>
+    <string name="pdf_password_wrong">That password didn\'t work. Check capital letters and try again.</string>
+    <string name="pdf_password_note">The file FormKit makes won\'t have a password.</string>
+    <string name="pdf_password_unlock">Unlock</string>
+    <string name="cd_drag_handle">Drag to reorder %1$s</string>
+    <string name="cd_move_up">Move %1$s up</string>
+    <string name="cd_move_down">Move %1$s down</string>
+    <string name="cd_remove_file">Remove %1$s</string>
+    <string name="cd_pdf_page">Page %1$d</string>
+    <string name="pdf_share_chooser">Share PDF</string>
+    <string name="pdf_problem_failed_title">Couldn\'t make the file</string>
+    <string name="pdf_problem_failed_body">Nothing was saved. Try again. If it keeps happening, try fewer pages or a different file.</string>
+    <string name="pdf_problem_import_title">Couldn\'t open what you picked</string>
+    <string name="pdf_problem_import_body">FormKit couldn\'t read the file. Try picking it again. If it\'s in a cloud app, download it to your phone first.</string>
+    <string name="pdf_problem_too_large_title">Can\'t get under %1$s</string>
+    <string name="pdf_problem_too_large_body">The smallest this PDF can be is about %1$s, even at the lowest quality. Try a higher limit, or split the PDF and upload fewer pages.</string>
+    <string name="pdf_problem_already_small_title">Already under %1$s</string>
+    <string name="pdf_problem_already_small_body">This PDF is %1$s, so it already fits. You can upload it as it is.</string>
+    <string name="pdf_progress_checking">Checking page %1$d of %2$d</string>
+    <string name="pdf_progress_page">Page %1$d of %2$d</string>
+    <string name="pdf_progress_photo">Photo %1$d of %2$d</string>
+    <string name="pdf_progress_writing">Writing the PDF…</string>
+    <plurals name="pdf_file_count">
+        <item quantity="one">%d PDF</item>
+        <item quantity="other">%d PDFs</item>
+    </plurals>
+    <plurals name="pdf_image_count">
+        <item quantity="one">%d image</item>
+        <item quantity="other">%d images</item>
+    </plurals>
+    <plurals name="pdf_saved_pdfs">
+        <item quantity="one">Saved %d PDF in Documents/FormKit</item>
+        <item quantity="other">Saved %d PDFs in Documents/FormKit</item>
+    </plurals>
+    <plurals name="pdf_saved_images">
+        <item quantity="one">Saved %1$d image in %2$s</item>
+        <item quantity="other">Saved %1$d images in %2$s</item>
+    </plurals>
+    <string name="pdf_change_file">Choose a different PDF</string>
+    <string name="pdf_unlock_all_hint">Enter the password for every locked PDF to continue.</string>
+    <string name="cd_pdf_first_page">First page of the PDF</string>
+
+    <!-- PDF tools: compress -->
+    <string name="compress_heading">Shrink a PDF to fit an upload limit</string>
+    <string name="compress_body">Pick a PDF and a limit like 200 KB. FormKit lands just under it, on your phone.</string>
+    <string name="compress_pick">Choose PDF</string>
+    <string name="compress_section_limit">Size limit</string>
+    <string name="compress_limit_current">This PDF is %1$s now.</string>
+    <string name="compress_notice_title">Text won\'t be selectable</string>
+    <string name="compress_notice_body">To reach a size limit, each page becomes an image. The PDF looks the same, but you can\'t copy or search its text. Keep the original if you need that.</string>
+    <string name="compress_action">Compress PDF</string>
+    <string name="compress_processing">Compressing your PDF…</string>
+    <string name="compress_result_title">PDF compressed</string>
+    <string name="compress_result_details">Was %1$s · %2$s smaller · %3$s</string>
+    <string name="compress_result_details_plain">Was %1$s · %2$s</string>
+
+    <!-- PDF tools: merge -->
+    <string name="merge_heading">Join PDFs into one</string>
+    <string name="merge_body">Pick two or more PDFs, put them in order, and FormKit joins them into a single file.</string>
+    <string name="merge_pick">Choose PDFs</string>
+    <string name="merge_add_more">Add more PDFs</string>
+    <string name="merge_reorder_hint">Drag the handle or use the arrows to change the order.</string>
+    <string name="merge_need_two">Add at least two PDFs to merge.</string>
+    <string name="merge_action">Merge PDFs</string>
+    <string name="merge_processing">Merging your PDFs…</string>
+    <string name="merge_result_title">PDFs merged</string>
+
+    <!-- PDF tools: split -->
+    <string name="split_heading">Take pages out of a PDF</string>
+    <string name="split_body">Split a PDF by page ranges, or pick the exact pages you need.</string>
+    <string name="split_pick">Choose PDF</string>
+    <string name="split_mode_ranges">Page ranges</string>
+    <string name="split_mode_pick">Pick pages</string>
+    <string name="split_range_label">Pages</string>
+    <string name="split_range_placeholder">For example 1-%1$d</string>
+    <string name="split_range_hint">Each range becomes its own PDF. Example: 1-3, 5, 8-</string>
+    <string name="split_error_invalid">“%1$s” isn\'t a page or range. Use numbers like 2 or 4-7.</string>
+    <string name="split_error_out_of_bounds">There\'s no page %1$d. This PDF has %2$d pages.</string>
+    <string name="split_pick_hint">The pages you pick become one PDF, in page order.</string>
+    <string name="split_selected">%1$d of %2$d pages picked</string>
+    <string name="split_select_all">Select all</string>
+    <string name="split_clear">Clear</string>
+    <string name="split_action">Split PDF</string>
+    <string name="split_action_extract">Extract pages</string>
+    <string name="split_processing">Splitting your PDF…</string>
+    <string name="split_result_title">PDF split</string>
+    <string name="split_result_details">%1$s in total</string>
+
+    <!-- PDF tools: PDF to images -->
+    <string name="pdf_images_heading">Turn PDF pages into images</string>
+    <string name="pdf_images_body">Save each page as a JPEG or PNG, sharp enough for forms or printing.</string>
+    <string name="pdf_images_pick">Choose PDF</string>
+    <string name="pdf_images_section_pages">Pages</string>
+    <string name="pdf_images_all">All pages</string>
+    <string name="pdf_images_some">Choose pages</string>
+    <string name="pdf_images_range_hint">Example: 1-3, 5</string>
+    <string name="pdf_images_section_quality">Sharpness</string>
+    <string name="pdf_images_dpi">%1$d DPI</string>
+    <string name="pdf_images_dpi_hint">150 DPI suits screens and most uploads. Use 300 DPI for printing.</string>
+    <string name="pdf_images_section_format">Image type</string>
+    <string name="pdf_images_format_hint_jpeg">JPEG files are small and work everywhere.</string>
+    <string name="pdf_images_format_hint_png">PNG files are bigger but keep text perfectly crisp.</string>
+    <string name="pdf_images_action">Export images</string>
+    <string name="pdf_images_processing">Exporting pages…</string>
+    <string name="pdf_images_result_title">Images ready</string>
+    <string name="pdf_images_result_details">%1$s in total · %2$d DPI · %3$s</string>
+    <string name="pdf_images_saved_indicator">Saved to Pictures/FormKit/%1$s</string>
+
+    <!-- PDF tools: images to PDF -->
+    <string name="images_pdf_heading">Make a PDF from photos</string>
+    <string name="images_pdf_body">Pick photos or scans, put them in order and choose a page size. Each photo gets its own page.</string>
+    <string name="images_pdf_pick">Choose photos</string>
+    <string name="images_pdf_add_more">Add more photos</string>
+    <string name="images_pdf_limit">You can add up to %1$d photos.</string>
+    <string name="images_pdf_item_details">Page %1$d · %2$s</string>
+    <string name="images_pdf_photo_label">Photo %1$d</string>
+    <string name="images_pdf_section_paper">Page size</string>
+    <string name="images_pdf_paper_a4">A4</string>
+    <string name="images_pdf_paper_letter">Letter</string>
+    <string name="images_pdf_paper_fit">Fit to photo</string>
+    <string name="images_pdf_section_orientation">Orientation</string>
+    <string name="images_pdf_orientation_hint">Auto turns each page to match its photo.</string>
+    <string name="images_pdf_orientation_auto">Auto</string>
+    <string name="images_pdf_orientation_portrait">Portrait</string>
+    <string name="images_pdf_orientation_landscape">Landscape</string>
+    <string name="images_pdf_section_margin">Margin</string>
+    <string name="images_pdf_margin_none">None</string>
+    <string name="images_pdf_margin_small">Small</string>
+    <string name="images_pdf_margin_large">Large</string>
+    <string name="images_pdf_action">Create PDF</string>
+    <string name="images_pdf_processing">Creating your PDF…</string>
+    <string name="images_pdf_result_title">PDF ready</string>
+
     <!-- Recent files -->
     <string name="recent_title">Recent files</string>
     <string name="recent_record_details">%1$s · %2$s</string>

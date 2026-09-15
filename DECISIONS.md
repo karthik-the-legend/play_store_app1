@@ -215,6 +215,84 @@ page-size support by reading the ELF `PT_LOAD` alignment.
 - **PDFs are saved to Documents/FormKit** through MediaStore, the same way images are saved to
   Pictures/FormKit.
 
+## PDF tools (Milestone 5)
+
+### PdfBox-Android, without BouncyCastle: measured, not guessed
+
+Built as release bundles (R8 on) on a throwaway branch, measured with
+`bundletool get-size total --dimensions=ABI`, and tested on the API 37 emulator with a 3-page PDF
+locked with RC4-128, AES-128 and AES-256 (made with pypdf).
+
+| | arm64-v8a download | Largest (x86) | Added | Passwords (RC4, AES-128, AES-256) | Merge, split |
+|---|---|---|---|---|---|
+| Milestone 4 baseline | 6.99 MB | 8.24 MB | — | — | — |
+| PdfBox-Android 2.0.27.0 | 13.03 MB | 14.29 MB | +6.04 MB | all pass | pass |
+| PdfBox-Android 2.0.27.0, BouncyCastle excluded | 8.82 MB | 10.08 MB | +1.83 MB | all pass | pass |
+
+- **Chosen: PdfBox-Android without BouncyCastle** (decided 2026-09-15). BouncyCastle costs about
+  4.2 MB even after R8. Standard password encryption goes through the platform's `javax.crypto`,
+  so it isn't needed. Only certificate-encrypted PDFs (rare) can't be opened; the app says so.
+- **Android's own `PdfRenderer` can't take a password below API 35** (SDK extension 13 on 12–14),
+  and minSdk is 24, so password support needs PdfBox. PdfBox unlocks a temporary copy, which
+  `PdfRenderer` then renders.
+- **R8 rules:** `-dontwarn com.gemalto.jp2.**` (optional JPEG 2000 decoder) and
+  `-dontwarn org.bouncycastle.**`.
+
+### How the tools work
+
+- **PDFs are picked with the system file picker** (`ACTION_OPEN_DOCUMENT`), because the Photo
+  Picker only offers images and videos. Neither needs a storage permission. Images → PDF still
+  uses the Photo Picker (up to 50 photos).
+- **Every picked file is copied into the tool's workspace**, and the session is saved, so a
+  tool comes back after process death, the same as the photo tools.
+- **Passwords:** PdfBox checks the password and writes an unlocked copy, which Android's renderer
+  reads. Files FormKit makes never carry a password, and the screen says so; upload portals
+  usually reject protected PDFs anyway. A protected PDF already under the size limit is simply
+  unlocked instead of compressed.
+- **Compress to a KB limit** follows §4.1 per page:
+  1. A quick pass renders a small preview of each page. Its JPEG size is the page's weight, and
+     a 100 px, quality-1 encode estimates the page's floor.
+  2. If the floors plus the PDF's own overhead (2 KB + 0.7 KB a page) are over the limit, it
+     stops at once and says the smallest size possible.
+  3. Otherwise the budget is split: every page gets its floor, and the rest goes by weight, so
+     photo pages get more than text pages. Each page is rendered at 200 DPI (at most 2400 px) and
+     fitted with the size search.
+  4. The rebuilt PDF is measured on disk. If it's over, the budget shrinks by the overshoot and
+     the pages are redone (up to 4 attempts). The saved copy is checked against the limit again.
+  - Rebuilt pages take their size from Android's renderer, which reports whole points, so an A4
+    page (595.28 × 841.89) comes back as 595 × 841: under a millimetre smaller. Reading each page's
+    exact box and rotation through PdfBox would fix that, but isn't worth the extra risk for a
+    difference no form or printer will notice.
+  - Checked on the emulator: a 2.8 MB two-page photo PDF compressed to 191,230 bytes for a 200 KB
+    limit in about 10 seconds.
+  - Before starting, the screen warns that text won't be selectable afterwards.
+- **Images → PDF:** photos are capped at 3508 px on the long side (A4 at 300 DPI), put on white
+  if transparent, and written as JPEG quality 88. PdfBox embeds the JPEG bytes unchanged. A4 and
+  Letter pages fit the photo inside the margin, centred. Auto orientation turns a page sideways
+  for a landscape photo. "Fit to photo" pages show the photo at 150 DPI.
+- **PDF → Images:** 72, 150 or 300 DPI, capped at 4000 px, JPEG quality 92 or PNG. Saved to
+  Pictures/FormKit/<PDF name>/, with page numbers zero-padded so galleries sort them correctly.
+- **Split:** typed ranges ("1-3, 5, 8-") make one PDF per range; picked pages make one PDF in
+  page order. Merge and split keep the original pages (text stays selectable).
+- **Reordering** (merge, images → PDF) is a small in-house drag handle, not a library. Every row
+  also has move up/down buttons for TalkBack and switch access.
+- **Rendering** stays at one page in memory at a time. PdfBox buffers in temporary files, not
+  RAM, so large documents don't run out of memory.
+
+### Checked on the emulator (API 37)
+
+Using the two public-domain NASA portraits and the pypdf-made test PDFs:
+
+- **Images → PDF:** two photos (4.6 MB and 5.2 MB) became a 2-page A4 PDF of 2.8 MB.
+- **Compress:** that PDF came out at 191,230 bytes for a 200 KB limit, in about 10 seconds.
+- **Split:** ranges "1,2" made two one-page PDFs (1.59 MB and 1.28 MB).
+- **Merge:** those two, reordered with the arrow, merged into a 2-page PDF whose pages carry the
+  split files' image bytes unchanged, in the new order.
+- **PDF → Images:** 150 DPI JPEG gave 1240 × 1752 px pages (775 KB for both), saved to
+  Pictures/FormKit/Photos_2_pages/.
+- **Passwords:** the AES-256 test PDF opened the prompt on its own, rejected a wrong password
+  with a clear message, and opened with the right one.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
@@ -225,6 +303,7 @@ download size Play would serve, which is what the 25 MB budget refers to.
 | 1 – skeleton | 3.32 MB | 1.13–1.14 MiB (1,185,341–1,195,718 bytes) | Compose, Material 3, Hilt, Navigation, DataStore. No native code yet. |
 | 2 – resize to KB | 4.40 MB | 1.51–1.52 MiB (1,578,216–1,591,301 bytes) | +Coil 3, ExifInterface, kotlinx-serialization-json: about +0.4 MB. |
 | 3 – signature | 4.56 MB | 1.56–1.57 MiB (1,636,714–1,650,704 bytes) | Cleanup is plain Kotlin, no new libraries: about +58 KB. |
+| 5 – PDF tools | 28.99 MB | 7.78–9.71 MiB (8,154,898–10,179,971 bytes) | +PdfBox-Android without BouncyCastle: about +1.9 MB. By ABI: armeabi-v7a 8.15 MB, arm64-v8a 8.92–8.94 MB, x86_64 9.68 MB, x86 10.16 MB. |
 | 4 – passport photo | 26.50 MB | 5.93–7.86 MiB (6,220,787–8,243,468 bytes) | +MediaPipe tasks-vision and the 244 KB selfie model. By ABI: armeabi-v7a 6.22 MB, arm64-v8a 6.99–7.00 MB, x86_64 7.75 MB, x86 8.23 MB. The AAB holds every ABI's native library, so it's much bigger than any download. |
 
 ## Test environment notes
@@ -257,9 +336,7 @@ These affect later milestones. They're recorded here so they don't get silently 
 6. **Camera** uses the system camera app (`ACTION_IMAGE_CAPTURE`, no permission) until Scan to
    PDF needs CameraX.
 7. **Background removal:** settled in Milestone 4 (MediaPipe, see above).
-8. **PDF:** Images→PDF and Compress use a small in-house writer that embeds JPEGs directly.
-   PdfBox is only for merge, split and password-protected files, and needs approval first
-   because it's likely over 3 MB.
+8. **PDF:** settled in Milestone 5 (PdfBox-Android without BouncyCastle, +1.83 MB, see above).
 9. **Compress PDF** searches one quality level across all pages against the total size, rather
    than hitting the target page by page.
 10. **Print sheet** has a 300 DPI tag and a PDF option; the watermark goes in the margin only.

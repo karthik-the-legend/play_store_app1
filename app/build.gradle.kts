@@ -87,6 +87,9 @@ dependencies {
     implementation(libs.androidx.exifinterface)
     implementation(libs.coil.compose)
     implementation(libs.mediapipe.tasks.vision)
+    // BouncyCastle only serves certificate-encrypted PDFs and adds about 4.2 MB. Password
+    // encryption works without it (see DECISIONS.md).
+    implementation(libs.pdfbox.android) { exclude(group = "org.bouncycastle") }
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

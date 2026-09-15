@@ -32,16 +32,24 @@ class FileExporter @Inject constructor(
     private val resolver get() = context.contentResolver
 
     /**
-     * Copies [source] into Pictures/FormKit and reads the size back from what actually landed
-     * on disk. If that's over [maxBytes], the file is deleted and an error is thrown, so the
-     * app can never hand over a file that breaks the limit the user asked for.
+     * Copies [source] into Pictures/FormKit (or a [subfolder] of it) and reads the size back from
+     * what actually landed on disk. If that's over [maxBytes], the file is deleted and an error is
+     * thrown, so the app can never hand over a file that breaks the limit the user asked for.
      */
-    suspend fun saveImage(source: File, displayName: String, mimeType: String, maxBytes: Long?): ExportedFile =
-        save(source, displayName, mimeType, maxBytes, Destination.Pictures)
+    suspend fun saveImage(
+        source: File,
+        displayName: String,
+        mimeType: String,
+        maxBytes: Long?,
+        subfolder: String? = null,
+    ): ExportedFile = save(source, displayName, mimeType, maxBytes, Destination.Pictures, subfolder)
 
-    /** Copies [source] (a PDF, say) into Documents/FormKit. */
-    suspend fun saveDocument(source: File, displayName: String, mimeType: String): ExportedFile =
-        save(source, displayName, mimeType, maxBytes = null, destination = Destination.Documents)
+    /**
+     * Copies [source] (a PDF, say) into Documents/FormKit, checking the size on disk against
+     * [maxBytes] the same way.
+     */
+    suspend fun saveDocument(source: File, displayName: String, mimeType: String, maxBytes: Long? = null): ExportedFile =
+        save(source, displayName, mimeType, maxBytes, Destination.Documents, subfolder = null)
 
     /** A content URI other apps can read, for sharing a file that hasn't been saved. */
     fun shareableUri(file: File): Uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
@@ -81,11 +89,13 @@ class FileExporter @Inject constructor(
         mimeType: String,
         maxBytes: Long?,
         destination: Destination,
+        subfolder: String?,
     ): ExportedFile = withContext(ioDispatcher) {
+        val folder = listOfNotNull(FOLDER, subfolder?.let(::safeFolderName)).joinToString("/")
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            insertScoped(source, displayName, mimeType, destination)
+            insertScoped(source, displayName, mimeType, destination, folder)
         } else {
-            insertLegacy(source, displayName, mimeType, destination)
+            insertLegacy(source, displayName, mimeType, destination, folder)
         }
         try {
             val onDisk = sizeOnDisk(uri)
@@ -97,11 +107,11 @@ class FileExporter @Inject constructor(
         }
     }
 
-    private fun insertScoped(source: File, displayName: String, mimeType: String, destination: Destination): Uri {
+    private fun insertScoped(source: File, displayName: String, mimeType: String, destination: Destination, folder: String): Uri {
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, "${destination.publicDirectory}/$FOLDER")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "${destination.publicDirectory}/$folder")
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
         val collection = when (destination) {
@@ -121,8 +131,8 @@ class FileExporter @Inject constructor(
     }
 
     @Suppress("DEPRECATION") // DATA and the public directories are the only way on Android 9 and older.
-    private fun insertLegacy(source: File, displayName: String, mimeType: String, destination: Destination): Uri {
-        val directory = File(Environment.getExternalStoragePublicDirectory(destination.publicDirectory), FOLDER)
+    private fun insertLegacy(source: File, displayName: String, mimeType: String, destination: Destination, folder: String): Uri {
+        val directory = File(Environment.getExternalStoragePublicDirectory(destination.publicDirectory), folder)
         if (!directory.isDirectory && !directory.mkdirs()) throw IOException("Couldn't create $directory")
         val target = uniqueFile(directory, displayName)
         source.copyTo(target)
@@ -165,5 +175,18 @@ class FileExporter @Inject constructor(
 
     companion object {
         const val FOLDER = "FormKit"
+        private const val MAX_FOLDER_NAME = 60
+
+        /** A folder name every file system accepts: no separators or reserved characters. */
+        fun safeFolderName(name: String): String {
+            val cleaned = name
+                .map { if (it.isISOControl() || it in "\\/:*?\"<>|") '_' else it }
+                .joinToString("")
+                .trim()
+                .trim('.')
+                .take(MAX_FOLDER_NAME)
+                .trim()
+            return cleaned.ifEmpty { "Pages" }
+        }
     }
 }

@@ -13,9 +13,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import app.formkit.feature.home.HomeScreen
 import app.formkit.feature.home.Tool
-import app.formkit.feature.home.ToolPlaceholderScreen
 import app.formkit.feature.onboarding.OnboardingScreen
 import app.formkit.feature.passport.PassportRoute
+import app.formkit.feature.pdf.compress.CompressPdfRoute
+import app.formkit.feature.pdf.images.PdfToImagesRoute
+import app.formkit.feature.pdf.merge.MergePdfRoute
+import app.formkit.feature.pdf.photos.ImagesToPdfRoute
+import app.formkit.feature.pdf.split.SplitPdfRoute
 import app.formkit.feature.recent.RecentFilesScreen
 import app.formkit.feature.resize.ResizeRoute
 import app.formkit.feature.settings.SettingsScreen
@@ -67,11 +71,15 @@ fun FormKitNavHost(
 
         composable<ToolRoute> { entry ->
             val onBack = dropUnlessResumed { navController.popBackStack() }
-            when (val tool = entry.toRoute<ToolRoute>().tool) {
+            when (entry.toRoute<ToolRoute>().tool) {
                 Tool.ResizeKb -> ResizeRoute(onBack = onBack)
                 Tool.Signature -> SignatureRoute(onBack = onBack)
                 Tool.PassportPhoto -> PassportRoute(onBack = onBack)
-                else -> ToolPlaceholderScreen(tool = tool, onBack = onBack)
+                Tool.ImagesToPdf -> ImagesToPdfRoute(onBack = onBack)
+                Tool.CompressPdf -> CompressPdfRoute(onBack = onBack)
+                Tool.MergePdf -> MergePdfRoute(onBack = onBack)
+                Tool.SplitPdf -> SplitPdfRoute(onBack = onBack)
+                Tool.PdfToImages -> PdfToImagesRoute(onBack = onBack)
             }
         }
 

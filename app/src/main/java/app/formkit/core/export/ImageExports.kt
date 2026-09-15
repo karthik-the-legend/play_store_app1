@@ -23,16 +23,26 @@ class ImageExports @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
 
-    /** Saves to Pictures/FormKit, checks the size on disk, and adds it to Recent files. */
-    suspend fun save(file: File, displayName: String, format: OutputFormat, maxBytes: Long?, size: PixelSize): ExportedFile {
-        val exported = exporter.saveImage(file, displayName, format.mimeType, maxBytes)
+    /**
+     * Saves to Pictures/FormKit (or a [subfolder] of it, for a set of pages), checks the size on
+     * disk, and adds it to Recent files.
+     */
+    suspend fun save(
+        file: File,
+        displayName: String,
+        format: OutputFormat,
+        maxBytes: Long?,
+        size: PixelSize,
+        subfolder: String? = null,
+    ): ExportedFile {
+        val exported = exporter.saveImage(file, displayName, format.mimeType, maxBytes, subfolder)
         record(exported, format.mimeType, size)
         return exported
     }
 
-    /** Saves a document (a PDF, say) to Documents/FormKit and adds it to Recent files. */
-    suspend fun saveDocument(file: File, displayName: String, mimeType: String, size: PixelSize?): ExportedFile {
-        val exported = exporter.saveDocument(file, displayName, mimeType)
+    /** Saves a document (a PDF, say) to Documents/FormKit, checks the size on disk, and adds it to Recent files. */
+    suspend fun saveDocument(file: File, displayName: String, mimeType: String, size: PixelSize?, maxBytes: Long? = null): ExportedFile {
+        val exported = exporter.saveDocument(file, displayName, mimeType, maxBytes)
         record(exported, mimeType, size)
         return exported
     }
