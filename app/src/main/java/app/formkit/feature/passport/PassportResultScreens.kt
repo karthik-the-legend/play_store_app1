@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -61,6 +63,8 @@ import app.formkit.core.ui.components.BackTopBar
 import app.formkit.core.ui.components.BottomActionBar
 import app.formkit.core.ui.components.ExportActionsBar
 import app.formkit.core.ui.components.PrimaryButton
+import app.formkit.core.ui.components.ProOfferCard
+import app.formkit.core.ui.components.ResultShownEffect
 import app.formkit.core.ui.components.Section
 import app.formkit.core.ui.formatSize
 import app.formkit.core.ui.theme.Spacing
@@ -81,6 +85,7 @@ internal fun PassportResultScreen(
     onDoAnother: () -> Unit,
     onMakeSheet: () -> Unit,
 ) {
+    ResultShownEffect(resultKey = result.path)
     Scaffold(
         topBar = { BackTopBar(stringResource(R.string.passport_result_title), onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -150,6 +155,7 @@ internal fun PassportResultScreen(
                     ) { Text(stringResource(R.string.passport_sheet_card_action)) }
                 }
             }
+            ProOfferCard()
         }
     }
 }
@@ -162,9 +168,13 @@ internal fun SheetOptionsScreen(
     frame: PixelSize,
     snackbarHostState: SnackbarHostState,
     isProcessing: Boolean,
+    watermarkFree: Boolean,
+    isLoadingAd: Boolean,
     onBack: () -> Unit,
     onOptionsChange: ((PassportOptions) -> PassportOptions) -> Unit,
     onCreate: () -> Unit,
+    onWatchAd: () -> Unit,
+    onGetPro: () -> Unit,
 ) {
     val dpi = options.dpi
     val counts = PrintSheets.countOptions(frame, dpi)
@@ -238,11 +248,47 @@ internal fun SheetOptionsScreen(
                     }
                 }
                 if (layout != null) {
+                    val note = when {
+                        layout.margin == 0 -> R.string.passport_sheet_edge_note
+                        watermarkFree -> R.string.passport_sheet_no_watermark_note
+                        else -> R.string.passport_sheet_watermark_note
+                    }
                     Text(
-                        stringResource(if (layout.margin > 0) R.string.passport_sheet_watermark_note else R.string.passport_sheet_edge_note),
+                        stringResource(note),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+            if (layout != null && layout.margin > 0 && !watermarkFree) {
+                Card(
+                    shape = MaterialTheme.shapes.medium,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(Spacing.medium), verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                        Text(stringResource(R.string.passport_sheet_watermark_free_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.passport_sheet_watermark_free_body),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small), verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedButton(
+                                onClick = onWatchAd,
+                                enabled = !isLoadingAd,
+                                shape = MaterialTheme.shapes.small,
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            ) {
+                                if (isLoadingAd) {
+                                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Text(stringResource(R.string.passport_sheet_watch_ad))
+                                }
+                            }
+                            TextButton(onClick = onGetPro) { Text(stringResource(R.string.pro_offer_action)) }
+                        }
+                    }
                 }
             }
             Section(stringResource(R.string.passport_sheet_format)) {
@@ -276,6 +322,7 @@ internal fun SheetResultScreen(
     onShare: () -> Unit,
     onDoAnother: () -> Unit,
 ) {
+    ResultShownEffect(resultKey = result.path)
     Scaffold(
         topBar = { BackTopBar(stringResource(R.string.passport_sheet_result_title), onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -325,6 +372,7 @@ internal fun SheetResultScreen(
                     )
                 }
             }
+            ProOfferCard()
         }
     }
 }

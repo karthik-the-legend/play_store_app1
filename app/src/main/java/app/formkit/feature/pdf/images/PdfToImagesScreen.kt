@@ -236,6 +236,7 @@ private fun PdfImagesResultScreen(
     val pages = state.pages
     val format = state.madeWithFormat ?: state.format
     PdfResultLayout(
+        resultKey = pages.first().path,
         title = stringResource(R.string.pdf_images_result_title),
         sizeHeadline = pluralStringResource(R.plurals.pdf_image_count, pages.size, pages.size),
         details = stringResource(

@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import app.formkit.R
 import app.formkit.core.ui.components.BackTopBar
 import app.formkit.core.ui.components.ExportActionsBar
+import app.formkit.core.ui.components.ProOfferCard
+import app.formkit.core.ui.components.ResultShownEffect
 import app.formkit.core.ui.formatSize
 import app.formkit.core.ui.theme.Spacing
 import coil3.compose.AsyncImage
@@ -49,6 +51,7 @@ internal fun ResizeResultScreen(
     onShare: () -> Unit,
     onDoAnother: () -> Unit,
 ) {
+    ResultShownEffect(resultKey = result.path)
     Scaffold(
         topBar = { BackTopBar(stringResource(R.string.resize_result_title), onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -96,6 +99,7 @@ internal fun ResizeResultScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            ProOfferCard()
         }
     }
 }

@@ -213,6 +213,7 @@ private fun CompressResultScreen(
         stringResource(R.string.compress_result_details_plain, formatSize(result.originalBytes), pages)
     }
     PdfResultLayout(
+        resultKey = result.path,
         title = stringResource(R.string.compress_result_title),
         sizeHeadline = formatSize(result.sizeBytes),
         details = details,

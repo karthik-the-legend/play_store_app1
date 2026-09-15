@@ -293,6 +293,105 @@ Using the two public-domain NASA portraits and the pypdf-made test PDFs:
 - **Passwords:** the AES-256 test PDF opened the prompt on its own, rejected a wrong password
   with a clear message, and opened with the right one.
 
+## Ads and billing (Milestone 6)
+
+### SDK size: measured, not guessed
+
+Release bundles (R8 on) on a throwaway branch, each with the consent SDK
+(`user-messaging-platform` 4.0.0) and `billing-ktx` 9.1.0, and stub code calling interstitial,
+rewarded and native ads, consent and billing so R8 keeps what the real code will use. Measured
+with `bundletool get-size total --dimensions=ABI`.
+
+| | arm64-v8a download | Largest (x86) | Added |
+|---|---|---|---|
+| Milestone 5 baseline | 8.92 MB | 10.18 MB | — |
+| `play-services-ads` 25.4.0 | 10.90 MB | 12.18 MB | +2.0 MB |
+| `play-services-ads-lite` 25.0.0 | 9.24 MB | 10.51 MB | +0.3 MB |
+
+- Both are under the 3 MB limit that needs approval.
+- **Permissions both add:** `INTERNET`, `ACCESS_NETWORK_STATE`, `com.google.android.gms.permission.AD_ID`,
+  `ACCESS_ADSERVICES_AD_ID`/`ATTRIBUTION`/`TOPICS`, `WAKE_LOCK`, `FOREGROUND_SERVICE` and
+  `com.android.vending.BILLING`. The Data Safety answers (Milestone 8) must declare the advertising ID.
+- The lite SDK borrows the ad code from Google Play services on the phone, so phones without it
+  show no ads, and its latest release (25.0.0) trails the full SDK (25.4.0).
+- The first measuring attempt failed for lack of memory, not because of the SDKs: the emulator
+  alone held about 6 GB. Measure with the emulator shut down.
+
+### Choices (decided 2026-09-15)
+
+- **Full `play-services-ads` 25.4.0**, not lite: ads work on every phone and the SDK is current.
+  12.2 MB at most is still well under the 25 MB budget.
+- **Test purchases:** the real Play Billing code is built now, alongside a debug-only fake store,
+  so unlocking, pending purchases, restoring and restarting offline can be checked on the emulator.
+  A real Play test purchase needs a Play Console internal test track with `formkit_pro_lifetime`
+  and a license tester, which the owner sets up (planned for Milestone 8). Uploading to Play locks
+  the package name, so `app.formkit` must be final by then.
+- **The rewarded ad unlocks a watermark-free print sheet for the session, and nothing else.**
+  FormKit has no batch resize, and capping Images → PDF or Merge would block students mid-task.
+  Pro removes the watermark for good.
+- **Ad IDs:** debug builds use Google's official test IDs. Release builds read the AdMob app ID
+  and ad unit IDs from local Gradle properties (`formkit.admob.appId`, `.interstitial`,
+  `.rewarded`, `.native`) that never go in the repo. If any is missing, the release build
+  shows no ads rather than test ads.
+
+### How it works
+
+- **Consent first.** Google's User Messaging Platform runs once per launch, after onboarding is
+  finished, so the form never covers the welcome screens. No ad is requested until it says
+  `canRequestAds()`. If it fails, there are simply no ads; every tool still works. Settings shows
+  "Ad privacy choices" only where UMP says users must be able to change their choice.
+- **Start-up stays fast.** The SDK starts on a background thread, with AdMob's
+  `OPTIMIZE_INITIALIZATION` and `OPTIMIZE_AD_LOADING` flags and measurement delayed until
+  consent. Ad content is capped at a teen rating.
+- **Interstitials** follow §7 in `InterstitialPolicy`: never for Pro, never without consent, never
+  on a new install's first two operations, at most one every 90 seconds. They're shown as a result
+  screen first appears, and only if one is already loaded, so no one ever waits on an ad; the
+  spec's 2-second timeout is therefore always met. A finished operation is counted once per
+  result, even across rotation and process death.
+- **Rewarded ad:** "Watch an ad" on the print sheet screen waits up to 3 seconds for an ad (the
+  user asked for it and sees a spinner). Watching to the end removes the watermark from sheets until
+  the app process ends. Closing early or no ad leaves the watermark, with a message saying why.
+- **Native ad:** Recent files only, drawn like a file card with an "Ad" label, and placed after the
+  last file so its late arrival never pushes a file the user is reading.
+- **No banners anywhere.** A dismissible Pro offer sits at the bottom of every result screen, and
+  the Settings card offers Get Pro and Restore purchase. Nothing is shown on launch or mid-task.
+- **Pro:** `ProManager` is the single source of truth.
+  - The cached answer applies at once, so Pro works offline.
+  - Google Play is asked again at each app start. Pro is revoked only when Play answers
+    successfully that nothing is owned (a refund); an offline or failed check keeps the cache.
+  - Pending purchases unlock only once they clear.
+  - Purchases are acknowledged, and a failed acknowledgement is retried on the next check,
+    because Play refunds unacknowledged purchases after 3 days.
+  - With no server, purchases are checked on the phone; that is the spec's zero-backend trade-off.
+- **Debug test store:** debug builds use `FakeProStore` unless built with `-Pformkit.fakeStore=false`.
+  Its "server" record lives apart from FormKit's own cache, and Settings has controls to go
+  offline, choose the next purchase outcome (succeed, pending, cancelled, fails), clear a pending
+  payment, refund, and check now. `-Pformkit.consentDebugEea=true` shows the consent form as if in
+  the EEA.
+- **Debug logging:** debug builds log consent, SDK start-up, every ad load and every interstitial
+  decision under the `FormKitAds` tag (`adb logcat -s FormKitAds`). Release builds log nothing.
+
+### Checked on the emulator (API 37, Google test ads, fake store)
+
+- **Consent:** Google's consent update succeeded and recorded that GDPR doesn't apply
+  (`IABTCF_gdprApplies=0`), so no form was needed; `canRequestAds=true`. Earlier, while HTTPS
+  couldn't be verified, consent failed and FormKit showed no ads while every tool kept working,
+  which is the designed fallback.
+- **Interstitial:** AdMob's test interstitial showed as a result screen appeared, only once the
+  rules allowed (for example "operation 10 … allowed=true loaded=true", more than 90 s after the
+  last), and closed back to the result.
+- **Native ad:** a test native ad appeared after the last file on Recent files, styled as a card
+  with an "Ad" label. AdMob's native ad validator reported "No implementation issues found".
+- **Rewarded ad:** "Watch an ad" on the print sheet screen played AdMob's test rewarded ad. After it,
+  the screen said "No watermark on this sheet." In the resulting 1800×1200 JPEG, the 54 px bottom
+  margin where the watermark goes has no watermark-grey pixels at all.
+- **Pro (fake store):** the price showed in Settings. Get Pro unlocked "FormKit Pro is active" and
+  removed ads. Pro stayed active after switching the store offline and restarting the app. A
+  refund followed by a check brought the offer back.
+- **LeakCanary:** it briefly held two closed `AdActivity` instances, then reported "All retained
+  objects have been garbage collected". It asks for notification permission to report leaks;
+  that prompt exists only in debug builds.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
@@ -303,8 +402,9 @@ download size Play would serve, which is what the 25 MB budget refers to.
 | 1 – skeleton | 3.32 MB | 1.13–1.14 MiB (1,185,341–1,195,718 bytes) | Compose, Material 3, Hilt, Navigation, DataStore. No native code yet. |
 | 2 – resize to KB | 4.40 MB | 1.51–1.52 MiB (1,578,216–1,591,301 bytes) | +Coil 3, ExifInterface, kotlinx-serialization-json: about +0.4 MB. |
 | 3 – signature | 4.56 MB | 1.56–1.57 MiB (1,636,714–1,650,704 bytes) | Cleanup is plain Kotlin, no new libraries: about +58 KB. |
-| 5 – PDF tools | 28.99 MB | 7.78–9.71 MiB (8,154,898–10,179,971 bytes) | +PdfBox-Android without BouncyCastle: about +1.9 MB. By ABI: armeabi-v7a 8.15 MB, arm64-v8a 8.92–8.94 MB, x86_64 9.68 MB, x86 10.16 MB. |
 | 4 – passport photo | 26.50 MB | 5.93–7.86 MiB (6,220,787–8,243,468 bytes) | +MediaPipe tasks-vision and the 244 KB selfie model. By ABI: armeabi-v7a 6.22 MB, arm64-v8a 6.99–7.00 MB, x86_64 7.75 MB, x86 8.23 MB. The AAB holds every ABI's native library, so it's much bigger than any download. |
+| 5 – PDF tools | 28.99 MB | 7.78–9.71 MiB (8,154,898–10,179,971 bytes) | +PdfBox-Android without BouncyCastle: about +1.9 MB. By ABI: armeabi-v7a 8.15 MB, arm64-v8a 8.92–8.94 MB, x86_64 9.68 MB, x86 10.16 MB. |
+| 6 – ads and Pro | 33.41 MB | 9.73–11.68 MiB (10,197,992–12,246,843 bytes) | +play-services-ads (full), UMP and Play Billing: about +2.0 MB. By ABI: armeabi-v7a 10.20–10.24 MB, arm64-v8a 10.96–11.00 MB, x86_64 11.72–11.76 MB, x86 12.21–12.25 MB. |
 
 ## Test environment notes
 
@@ -318,6 +418,19 @@ download size Play would serve, which is what the 25 MB budget refers to.
 - Java-based tools on this machine need `-Djavax.net.ssl.trustStoreType=Windows-ROOT`, because
   Avast re-signs HTTPS. That setting is machine-local (Gradle user home, `GRADLE_OPTS`) and
   never goes in the repo.
+- **The same Avast HTTPS scanning breaks ads on the emulator.** The emulator doesn't trust Avast's
+  certificate, so consent and ad requests fail with "Trust anchor for certification path not found".
+  Pause HTTPS scanning (or exclude the emulator) while checking ads, then turn it back on.
+- **Emulator DNS can go stale** (for example after the PC sleeps). Every name then fails to resolve
+  while pinging an IP still works. Relaunch with `-dns-server 8.8.8.8,8.8.4.4`.
+- **Memory:** the emulator holds about 6 GB. Measure release size with it shut down. With it
+  running, build with `-Dorg.gradle.jvmargs=-Xmx1536m -Pkotlin.compiler.execution.strategy=in-process`,
+  or the Gradle daemon can be killed.
+- **UI automation gotchas on this image:**
+  - Gboard's "Try out your stylus" tutorial can cover the screen after text input and swallow taps.
+  - The newer photo picker selects on tap and needs "Done".
+  - Android shows a one-time "Viewing full screen" hint over the first full-screen ad.
+  - A fresh boot can raise "System UI isn't responding" under load; tap Wait.
 
 ## Defaults adopted from planning, not yet confirmed
 

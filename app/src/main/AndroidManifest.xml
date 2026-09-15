@@ -35,6 +35,24 @@
             </intent-filter>
         </activity>
 
+        <!--
+            AdMob. The app ID is Google's test ID in debug builds and the real one from a local
+            Gradle property in release. Measurement waits for consent, and the SDK's start-up work
+            runs off the main thread so it can't slow the first screen.
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
+        <meta-data
+            android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
+            android:value="true" />
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
+            android:value="true" />
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
+            android:value="true" />
+
         <!-- Shares files from the cache before they're saved. -->
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import app.formkit.R
 import app.formkit.core.ui.components.BackTopBar
 import app.formkit.core.ui.components.ExportActionsBar
+import app.formkit.core.ui.components.ProOfferCard
+import app.formkit.core.ui.components.ResultShownEffect
 import app.formkit.core.ui.formatSize
 import app.formkit.core.ui.theme.Spacing
 
@@ -264,6 +266,8 @@ fun PdfPasswordDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PdfResultLayout(
+    /** Unique to this result, such as its file path; counts the operation once (see [ResultShownEffect]). */
+    resultKey: String,
     title: String,
     sizeHeadline: String,
     details: String,
@@ -278,6 +282,7 @@ fun PdfResultLayout(
     badge: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    ResultShownEffect(resultKey)
     Scaffold(
         topBar = { BackTopBar(title, onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -317,6 +322,7 @@ fun PdfResultLayout(
                 }
             }
             content()
+            ProOfferCard()
         }
     }
 }

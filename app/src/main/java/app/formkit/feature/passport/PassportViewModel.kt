@@ -338,8 +338,8 @@ class PassportViewModel @Inject constructor(
         updateSession { it.copy(step = PassportStep.Sheet) }
     }
 
-    /** [watermark] is the localised note printed in the sheet's margin. */
-    fun createSheet(watermark: String) {
+    /** [watermark] is the localised note printed in the sheet's margin, or null for none (Pro or a rewarded ad). */
+    fun createSheet(watermark: String?) {
         val current = session.value
         val options = current.options
         val frame = options.frameSize() ?: return

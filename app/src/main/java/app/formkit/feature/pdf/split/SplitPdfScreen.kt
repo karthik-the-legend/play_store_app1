@@ -300,6 +300,7 @@ private fun SplitResultScreen(
 ) {
     val outputs = state.outputs
     PdfResultLayout(
+        resultKey = outputs.first().path,
         title = stringResource(R.string.split_result_title),
         sizeHeadline = pluralStringResource(R.plurals.pdf_file_count, outputs.size, outputs.size),
         details = stringResource(R.string.split_result_details, formatSize(outputs.sumOf { it.sizeBytes })),

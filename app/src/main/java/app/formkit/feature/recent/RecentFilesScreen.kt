@@ -50,6 +50,7 @@ import app.formkit.core.history.ExportRecord
 import app.formkit.core.imaging.PixelSize
 import app.formkit.core.ui.components.BackTopBar
 import app.formkit.core.ui.components.EmptyState
+import app.formkit.core.ui.components.NativeAdCard
 import app.formkit.core.ui.components.RecentFilesIllustration
 import app.formkit.core.ui.formatSize
 import app.formkit.core.ui.shareFile
@@ -124,6 +125,8 @@ fun RecentFilesScreen(
                         onDelete = { pendingDeleteId = record.id },
                     )
                 }
+                // Last in the list, so an ad arriving late never pushes a file the user is reading.
+                item(key = NATIVE_AD_KEY) { NativeAdCard(Modifier.fillMaxWidth()) }
             }
         }
     }
@@ -148,6 +151,8 @@ fun RecentFilesScreen(
         )
     }
 }
+
+private const val NATIVE_AD_KEY = "native-ad"
 
 @Composable
 private fun RecordRow(record: ExportRecord, onShare: () -> Unit, onDelete: () -> Unit) {

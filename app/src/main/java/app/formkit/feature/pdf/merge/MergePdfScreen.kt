@@ -217,6 +217,7 @@ private fun MergeResultScreen(
     onDoAnother: () -> Unit,
 ) {
     PdfResultLayout(
+        resultKey = result.path,
         title = stringResource(R.string.merge_result_title),
         sizeHeadline = formatSize(result.sizeBytes),
         details = stringResource(

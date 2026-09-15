@@ -471,7 +471,48 @@
     <string name="settings_temp_files_nothing">Nothing to clear. Temporary files are already empty.</string>
     <string name="settings_section_pro">FormKit Pro</string>
     <string name="settings_pro_title">Remove ads with a one-time purchase</string>
-    <string name="settings_pro_body">No subscription. Coming in an upcoming update.</string>
+    <string name="settings_pro_body">One payment of %1$s removes all ads and the print sheet watermark, for good. No subscription.</string>
+    <string name="settings_pro_body_no_price">One payment removes all ads and the print sheet watermark, for good. No subscription.</string>
+    <string name="settings_pro_buy">Get Pro</string>
+    <string name="settings_pro_restore">Restore purchase</string>
+    <string name="settings_pro_active_title">FormKit Pro is active</string>
+    <string name="settings_pro_active_body">Thank you for supporting FormKit. Ads and the print sheet watermark are gone.</string>
+    <string name="settings_pro_pending">Your payment is still being processed. Pro unlocks as soon as it clears.</string>
+    <string name="settings_ad_privacy">Ad privacy choices</string>
+    <string name="settings_ad_privacy_value">Change how ads use your data</string>
+    <string name="pro_offer_title">Enjoying FormKit?</string>
+    <string name="pro_offer_body">Remove ads for good with one payment of %1$s.</string>
+    <string name="pro_offer_body_no_price">Remove ads for good with a one-time purchase.</string>
+    <string name="pro_offer_action">Get Pro</string>
+    <string name="pro_offer_dismiss">Not now</string>
+    <string name="pro_pending_short">Payment pending</string>
+    <string name="pro_event_purchased">FormKit Pro unlocked. Thank you!</string>
+    <string name="pro_event_pending">Payment pending. Pro unlocks as soon as it clears.</string>
+    <string name="pro_event_restored">FormKit Pro restored</string>
+    <string name="pro_event_nothing_to_restore">No FormKit Pro purchase found for this Google account.</string>
+    <string name="pro_event_offline">Couldn\'t reach Google Play. Check your connection and try again.</string>
+    <string name="pro_event_unavailable">Google Play purchases aren\'t available on this phone.</string>
+    <string name="pro_event_error">The purchase didn\'t go through, and you haven\'t been charged. Try again in a moment.</string>
+    <string name="ad_label">Ad</string>
+    <string name="passport_sheet_watermark_free_title">Print without the watermark</string>
+    <string name="passport_sheet_watermark_free_body">Watch a short ad to remove it from every sheet you make until you close FormKit, or get Pro to remove it for good.</string>
+    <string name="passport_sheet_watch_ad">Watch an ad</string>
+    <string name="passport_sheet_no_watermark_note">No watermark on this sheet.</string>
+    <string name="rewarded_unlocked">Watermark removed for the rest of this session.</string>
+    <string name="rewarded_unavailable">No ad is available right now. Try again in a minute, or get Pro.</string>
+    <string name="rewarded_not_finished">The ad was closed early, so the watermark stays. Watch to the end to remove it.</string>
+    <string name="debug_store_title" translatable="false">Test store (debug builds only)</string>
+    <string name="debug_store_body" translatable="false">Purchases here never reach Google Play. Use these to check pending payments, refunds and offline restarts.</string>
+    <string name="debug_store_offline" translatable="false">Pretend there\'s no connection</string>
+    <string name="debug_store_next" translatable="false">Next purchase</string>
+    <string name="debug_store_outcome_succeed" translatable="false">Succeeds</string>
+    <string name="debug_store_outcome_pending" translatable="false">Pending</string>
+    <string name="debug_store_outcome_cancel" translatable="false">Cancelled</string>
+    <string name="debug_store_outcome_fail" translatable="false">Fails</string>
+    <string name="debug_store_complete_pending" translatable="false">Clear pending payment</string>
+    <string name="debug_store_refund" translatable="false">Refund purchase</string>
+    <string name="debug_store_check" translatable="false">Check with store now</string>
+    <string name="debug_store_server_state" translatable="false">Store record: %1$s</string>
     <string name="settings_section_about">About</string>
     <string name="settings_privacy">Privacy</string>
     <string name="settings_privacy_value">Your files are never uploaded</string>
@@ -480,7 +521,7 @@
     <string name="settings_version">Version</string>
 
     <string name="privacy_dialog_title">Your files stay on your phone</string>
-    <string name="privacy_dialog_body">FormKit resizes, edits and converts files entirely on your device. There\'s no account, no server and no cloud storage, so nothing is uploaded and nobody else can see your files.</string>
+    <string name="privacy_dialog_body">FormKit resizes, edits and converts files entirely on your device. There\'s no account and no cloud storage, so your files are never uploaded and nobody else can see them.\n\nThe free version shows ads from Google AdMob, which uses your phone\'s advertising ID to choose and measure ads. FormKit Pro removes ads.</string>
     <string name="privacy_dialog_ok">Got it</string>
 
     <string name="share_app_text">I use FormKit to resize photos to an exact KB size and make passport photos for online forms. It works offline: %1$s</string>

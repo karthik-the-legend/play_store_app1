@@ -2,6 +2,7 @@ package app.formkit.feature.passport
 
 import android.content.ActivityNotFoundException
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -44,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -65,6 +67,9 @@ import app.formkit.core.imaging.OptionsError
 import app.formkit.core.imaging.OptionsValidation
 import app.formkit.core.imaging.TargetInput
 import app.formkit.core.imaging.passport.BrushMode
+import app.formkit.core.monetization.RewardOutcome
+import app.formkit.core.monetization.rememberMonetization
+import kotlinx.coroutines.launch
 import app.formkit.core.ui.components.BackTopBar
 import app.formkit.core.ui.components.BottomActionBar
 import app.formkit.core.ui.components.NumberField
@@ -97,6 +102,34 @@ fun PassportRoute(
     val savePhoto = rememberStorageAwareSave(snackbarHostState, viewModel::savePhoto)
     val saveSheet = rememberStorageAwareSave(snackbarHostState, viewModel::saveSheet)
     val watermark = stringResource(R.string.passport_watermark)
+
+    // Pro, or a rewarded ad watched this session, removes the print sheet watermark.
+    val monetization = rememberMonetization()
+    val pro by monetization.proManager().state.collectAsStateWithLifecycle()
+    val rewardedWatermarkFree by monetization.sessionPerks().watermarkFreeSheets.collectAsStateWithLifecycle()
+    val watermarkFree = pro.isPro || rewardedWatermarkFree
+    val activity = LocalActivity.current
+    val scope = rememberCoroutineScope()
+    var loadingAd by remember { mutableStateOf(false) }
+    val watchAd: () -> Unit = {
+        if (activity != null && !loadingAd) {
+            scope.launch {
+                loadingAd = true
+                val outcome = monetization.adsManager().showRewarded(activity)
+                loadingAd = false
+                val message = when (outcome) {
+                    RewardOutcome.Earned -> {
+                        monetization.sessionPerks().unlockWatermarkFreeSheets()
+                        R.string.rewarded_unlocked
+                    }
+                    RewardOutcome.Dismissed -> R.string.rewarded_not_finished
+                    RewardOutcome.Unavailable -> R.string.rewarded_unavailable
+                }
+                snackbarHostState.showSnackbar(context.getString(message))
+            }
+        }
+    }
+    val getPro: () -> Unit = { activity?.let { scope.launch { monetization.proManager().buy(it) } } }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -149,9 +182,13 @@ fun PassportRoute(
                 frame = state.frame ?: photo.size,
                 snackbarHostState = snackbarHostState,
                 isProcessing = state.isProcessing,
+                watermarkFree = watermarkFree,
+                isLoadingAd = loadingAd,
                 onBack = viewModel::backToPhotoResult,
                 onOptionsChange = viewModel::updateOptions,
-                onCreate = { viewModel.createSheet(watermark) },
+                onCreate = { viewModel.createSheet(if (watermarkFree) null else watermark) },
+                onWatchAd = watchAd,
+                onGetPro = getPro,
             )
         }
         session.step == PassportStep.Result && photo != null -> {

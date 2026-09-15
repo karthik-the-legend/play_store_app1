@@ -35,6 +35,8 @@ import app.formkit.R
 import app.formkit.core.imaging.OutputFormat
 import app.formkit.core.ui.components.BackTopBar
 import app.formkit.core.ui.components.ExportActionsBar
+import app.formkit.core.ui.components.ProOfferCard
+import app.formkit.core.ui.components.ResultShownEffect
 import app.formkit.core.ui.components.checkerboard
 import app.formkit.core.ui.formatSize
 import app.formkit.core.ui.theme.Spacing
@@ -53,6 +55,7 @@ internal fun SignatureResultScreen(
     onDoAnother: () -> Unit,
 ) {
     val transparent = result.format == OutputFormat.Png
+    ResultShownEffect(resultKey = result.path)
     Scaffold(
         topBar = { BackTopBar(stringResource(R.string.signature_result_title), onBack) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -140,6 +143,7 @@ internal fun SignatureResultScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            ProOfferCard()
         }
     }
 }

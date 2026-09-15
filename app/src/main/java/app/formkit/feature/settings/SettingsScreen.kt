@@ -3,14 +3,17 @@ package app.formkit.feature.settings
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +27,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -35,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +52,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.formkit.BuildConfig
 import app.formkit.R
+import app.formkit.core.monetization.FakeProStore
+import app.formkit.core.monetization.FakePurchaseOutcome
+import app.formkit.core.monetization.FakeStoreSettings
+import app.formkit.core.monetization.OwnedState
+import app.formkit.core.monetization.rememberMonetization
 import app.formkit.core.settings.ThemeMode
 import app.formkit.core.ui.components.BackTopBar
 import app.formkit.core.ui.formatSize
@@ -95,6 +105,8 @@ private fun SettingsContent(
     onClearTempFiles: () -> Unit,
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
+    val monetization = rememberMonetization()
     val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     var showPrivacy by rememberSaveable { mutableStateOf(false) }
@@ -141,25 +153,7 @@ private fun SettingsContent(
             )
 
             SectionHeader(stringResource(R.string.settings_section_pro))
-            Card(
-                shape = MaterialTheme.shapes.medium,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.medium),
-            ) {
-                Column(
-                    modifier = Modifier.padding(Spacing.medium),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.small),
-                ) {
-                    Text(stringResource(R.string.settings_pro_title), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        stringResource(R.string.settings_pro_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-            }
+            ProCard()
 
             SectionHeader(stringResource(R.string.settings_section_about))
             SettingsItem(
@@ -167,6 +161,14 @@ private fun SettingsContent(
                 supporting = stringResource(R.string.settings_privacy_value),
                 onClick = { showPrivacy = true },
             )
+            val privacyOptionsRequired by monetization.consentManager().privacyOptionsRequired.collectAsStateWithLifecycle()
+            if (privacyOptionsRequired) {
+                SettingsItem(
+                    title = stringResource(R.string.settings_ad_privacy),
+                    supporting = stringResource(R.string.settings_ad_privacy_value),
+                    onClick = { activity?.let { monetization.consentManager().showPrivacyOptions(it) } },
+                )
+            }
             val noStore = stringResource(R.string.error_no_store)
             SettingsItem(
                 title = stringResource(R.string.settings_rate),
@@ -181,6 +183,8 @@ private fun SettingsContent(
                 title = stringResource(R.string.settings_version),
                 supporting = BuildConfig.VERSION_NAME,
             )
+
+            if (BuildConfig.USE_FAKE_STORE) DebugStoreSection()
         }
     }
 
@@ -193,6 +197,128 @@ private fun SettingsContent(
                 TextButton(onClick = { showPrivacy = false }) { Text(stringResource(R.string.privacy_dialog_ok)) }
             },
         )
+    }
+}
+
+/** Buy, restore, or a thank-you once Pro is active. */
+@Composable
+private fun ProCard() {
+    val monetization = rememberMonetization()
+    val pro by monetization.proManager().state.collectAsStateWithLifecycle()
+    val activity = LocalActivity.current
+    val scope = rememberCoroutineScope()
+    var restoring by remember { mutableStateOf(false) }
+    Card(
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.medium),
+    ) {
+        Column(
+            modifier = Modifier.padding(Spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.small),
+        ) {
+            if (pro.isPro) {
+                Text(stringResource(R.string.settings_pro_active_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.settings_pro_active_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                return@Column
+            }
+            Text(stringResource(R.string.settings_pro_title), style = MaterialTheme.typography.titleMedium)
+            val price = pro.price
+            Text(
+                if (price != null) stringResource(R.string.settings_pro_body, price) else stringResource(R.string.settings_pro_body_no_price),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            if (pro.isPending) {
+                Text(
+                    stringResource(R.string.settings_pro_pending),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small), verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = { activity?.let { scope.launch { monetization.proManager().buy(it) } } },
+                    enabled = activity != null && !pro.isPending,
+                ) { Text(stringResource(R.string.settings_pro_buy)) }
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            restoring = true
+                            monetization.proManager().restore()
+                            restoring = false
+                        }
+                    },
+                    enabled = !restoring,
+                ) { Text(stringResource(R.string.settings_pro_restore)) }
+            }
+        }
+    }
+}
+
+/** Controls for the fake store in debug builds; see DECISIONS.md. */
+@Composable
+private fun DebugStoreSection() {
+    val monetization = rememberMonetization()
+    val fake = monetization.proStore() as? FakeProStore ?: return
+    val settings by fake.settings.collectAsStateWithLifecycle(initialValue = FakeStoreSettings())
+    val scope = rememberCoroutineScope()
+
+    SectionHeader(stringResource(R.string.debug_store_title))
+    Text(
+        stringResource(R.string.debug_store_body),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = Spacing.medium),
+    )
+    SettingsItem(
+        title = stringResource(R.string.debug_store_offline),
+        trailing = { Switch(checked = settings.offline, onCheckedChange = { offline -> scope.launch { fake.setOffline(offline) } }) },
+    )
+    Column(
+        modifier = Modifier.padding(horizontal = Spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(Spacing.small),
+    ) {
+        Text(stringResource(R.string.debug_store_next), style = MaterialTheme.typography.bodyLarge)
+        val outcomes = listOf(
+            FakePurchaseOutcome.Succeed to R.string.debug_store_outcome_succeed,
+            FakePurchaseOutcome.Pending to R.string.debug_store_outcome_pending,
+            FakePurchaseOutcome.Cancel to R.string.debug_store_outcome_cancel,
+            FakePurchaseOutcome.Fail to R.string.debug_store_outcome_fail,
+        )
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            outcomes.forEachIndexed { index, (outcome, label) ->
+                SegmentedButton(
+                    selected = settings.nextOutcome == outcome,
+                    onClick = { scope.launch { fake.setNextOutcome(outcome) } },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = outcomes.size),
+                ) { Text(stringResource(label), maxLines = 1) }
+            }
+        }
+        Text(
+            stringResource(R.string.debug_store_server_state, settings.serverState.name),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
+            TextButton(
+                onClick = { scope.launch { fake.completePendingPurchase() } },
+                enabled = settings.serverState == OwnedState.Pending,
+            ) { Text(stringResource(R.string.debug_store_complete_pending)) }
+            TextButton(
+                onClick = { scope.launch { fake.refund() } },
+                enabled = settings.serverState != OwnedState.NotOwned,
+            ) { Text(stringResource(R.string.debug_store_refund)) }
+        }
+        TextButton(onClick = { scope.launch { monetization.proManager().refresh() } }) {
+            Text(stringResource(R.string.debug_store_check))
+        }
     }
 }
 

@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.StrictMode
 import app.formkit.core.di.ApplicationScope
 import app.formkit.core.di.IoDispatcher
+import app.formkit.core.monetization.ProManager
 import app.formkit.core.storage.CacheJanitor
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineDispatcher
@@ -17,6 +18,7 @@ class FormKitApp : Application() {
     @Inject lateinit var cacheJanitor: CacheJanitor
     @Inject @ApplicationScope lateinit var appScope: CoroutineScope
     @Inject @IoDispatcher lateinit var ioDispatcher: CoroutineDispatcher
+    @Inject lateinit var proManager: ProManager
 
     override fun onCreate() {
         if (BuildConfig.DEBUG) enableStrictMode()
@@ -25,6 +27,8 @@ class FormKitApp : Application() {
         // Only stale leftovers go: anything recent may belong to a tool screen that is being
         // restored after process death.
         appScope.launch(ioDispatcher) { cacheJanitor.pruneOlderThan(CacheJanitor.STALE_AFTER_MILLIS) }
+        // The cached Pro answer applies at once; Google Play is asked again in the background.
+        appScope.launch { proManager.refresh() }
     }
 
     private fun enableStrictMode() {

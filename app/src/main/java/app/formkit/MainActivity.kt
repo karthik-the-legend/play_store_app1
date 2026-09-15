@@ -25,16 +25,24 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import app.formkit.core.monetization.AdsManager
+import app.formkit.core.monetization.ConsentManager
 import app.formkit.core.settings.ThemeMode
+import app.formkit.core.ui.components.ProEventMessages
 import app.formkit.core.ui.theme.FormKitTheme
 import app.formkit.navigation.FormKitNavHost
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
+
+    @Inject lateinit var consentManager: ConsentManager
+    @Inject lateinit var adsManager: AdsManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -79,7 +87,15 @@ class MainActivity : ComponentActivity() {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     FormKitNavHost(startWithOnboarding = startWithOnboarding)
                 }
+                ProEventMessages()
             }
+        }
+
+        // Ad consent waits until onboarding is done, so Google's form never covers the welcome
+        // screens. Without consent there are simply no ads; every tool keeps working.
+        lifecycleScope.launch {
+            viewModel.uiState.first { it is MainUiState.Ready && it.settings.onboardingComplete }
+            if (consentManager.gather(this@MainActivity)) adsManager.startIfAllowed()
         }
     }
 

@@ -344,6 +344,7 @@ private fun ImagesPdfResultScreen(
         },
     )
     PdfResultLayout(
+        resultKey = result.path,
         title = stringResource(R.string.images_pdf_result_title),
         sizeHeadline = formatSize(result.sizeBytes),
         details = stringResource(R.string.pdf_file_details, pluralStringResource(R.plurals.pdf_page_count, result.pageCount, result.pageCount), paperLabel),

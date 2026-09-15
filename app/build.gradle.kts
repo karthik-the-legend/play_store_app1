@@ -6,6 +6,22 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// Google's official test IDs: https://developers.google.com/admob/android/test-ads
+val testAdmobAppId = "ca-app-pub-3940256099942544~3347511713"
+val testInterstitialUnit = "ca-app-pub-3940256099942544/1033173712"
+val testRewardedUnit = "ca-app-pub-3940256099942544/5224354917"
+val testNativeUnit = "ca-app-pub-3940256099942544/2247696110"
+
+// Real AdMob IDs for release builds come from ~/.gradle/gradle.properties (never this repo).
+val releaseAdmobAppId: String? = providers.gradleProperty("formkit.admob.appId").orNull
+val releaseInterstitialUnit: String? = providers.gradleProperty("formkit.admob.interstitial").orNull
+val releaseRewardedUnit: String? = providers.gradleProperty("formkit.admob.rewarded").orNull
+val releaseNativeUnit: String? = providers.gradleProperty("formkit.admob.native").orNull
+val hasReleaseAdIds = listOf(releaseAdmobAppId, releaseInterstitialUnit, releaseRewardedUnit, releaseNativeUnit)
+    .all { !it.isNullOrBlank() }
+
+fun quoted(value: String?) = "\"${value.orEmpty()}\""
+
 android {
     namespace = "app.formkit"
     compileSdk {
@@ -23,6 +39,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["admobAppId"] = testAdmobAppId
+            buildConfigField("boolean", "ADS_ENABLED", "true")
+            buildConfigField("String", "AD_UNIT_INTERSTITIAL", quoted(testInterstitialUnit))
+            buildConfigField("String", "AD_UNIT_REWARDED", quoted(testRewardedUnit))
+            buildConfigField("String", "AD_UNIT_NATIVE", quoted(testNativeUnit))
+            // The fake store lets purchases be tested without a Play Console app.
+            // Build with -Pformkit.fakeStore=false to talk to Google Play instead.
+            buildConfigField("boolean", "USE_FAKE_STORE", providers.gradleProperty("formkit.fakeStore").orElse("true").get())
+            // -Pformkit.consentDebugEea=true shows the consent form as if the phone were in the EEA.
+            buildConfigField("boolean", "CONSENT_DEBUG_EEA", providers.gradleProperty("formkit.consentDebugEea").orElse("false").get())
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -30,6 +58,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Without every real ID, release builds show no ads at all rather than test ads.
+            manifestPlaceholders["admobAppId"] = if (hasReleaseAdIds) releaseAdmobAppId!! else testAdmobAppId
+            buildConfigField("boolean", "ADS_ENABLED", hasReleaseAdIds.toString())
+            buildConfigField("String", "AD_UNIT_INTERSTITIAL", quoted(releaseInterstitialUnit))
+            buildConfigField("String", "AD_UNIT_REWARDED", quoted(releaseRewardedUnit))
+            buildConfigField("String", "AD_UNIT_NATIVE", quoted(releaseNativeUnit))
+            buildConfigField("boolean", "USE_FAKE_STORE", "false")
+            buildConfigField("boolean", "CONSENT_DEBUG_EEA", "false")
         }
     }
 
@@ -90,6 +126,9 @@ dependencies {
     // BouncyCastle only serves certificate-encrypted PDFs and adds about 4.2 MB. Password
     // encryption works without it (see DECISIONS.md).
     implementation(libs.pdfbox.android) { exclude(group = "org.bouncycastle") }
+    implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
+    implementation(libs.billing.ktx)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
