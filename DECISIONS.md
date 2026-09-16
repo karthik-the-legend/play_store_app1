@@ -392,6 +392,99 @@ with `bundletool get-size total --dimensions=ABI`.
   objects have been garbage collected". It asks for notification permission to report leaks;
   that prompt exists only in debug builds.
 
+## Scan to PDF (Milestone 7)
+
+### Finding the page: built here, not bought (decided 2026-09-16)
+
+| | Size | Works offline | Screens | Risk |
+|---|---|---|---|---|
+| **Our own edge finder** (chosen) | +0 MB | always | FormKit's own | detection has to be good enough on its own |
+| ML Kit document scanner | about +0.3 MB | **no on first use** | Google's | needs Play services |
+| OpenCV | about +9–10 MB an ABI | always | ours | over the ~3 MB rule |
+
+ML Kit's scanner is excellent and would have been the least work, but Play services downloads it
+the first time it runs, so the first scan on a new phone fails in airplane mode. §2.6 says every
+feature except ads must work offline, and "scan the form you're about to upload" is exactly what
+someone does on patchy data. OpenCV would cost more than a third of the whole size budget.
+
+### How the finder works
+
+All of it is plain Kotlin on a 480 px greyscale copy of the photo, so it runs in unit tests without
+a device (`PageEdgeFinder`).
+
+1. Blur away paper grain and JPEG noise, find edges with a Sobel filter, and thin them to one pixel.
+2. **Hough transform:** every edge pixel votes for the straight lines through it that face the way
+   it does. Long straight edges win, even where a thumb or a shadow breaks them. Each winning line
+   is then fitted exactly to its own pixels, which takes corner accuracy well inside a pixel or two.
+3. Two roughly parallel lines crossed with two more make a candidate outline. Opposite sides may
+   lean up to 40° towards each other, because a page shot at an angle is a trapezoid, not a rectangle.
+4. Each candidate is scored side by side: how much of the side runs along an edge facing the right
+   way, and whether the inside is lighter (or darker) than the outside all the way round. **That
+   last check is what stops a box printed on the page winning**, because a printed line has the same
+   paper on both sides of it. The largest well-supported outline wins.
+5. If the weakest side isn't convincing, **nothing is returned**: the corners start at the photo's
+   edges and the screen says the edges weren't found. §4.5 asks for exactly this rather than a bad
+   auto-detect.
+
+Straightening uses Android's own `Matrix.setPolyToPoly`, a four-point perspective transform, so
+there's no matrix maths or library of ours in the output path.
+
+### The looks (`ScanFilters`)
+
+Enhanced and black & white first estimate how bright the bare paper is across the page: the page is
+cut into a grid of about 64 cells on the long side, each takes its 90th-percentile brightness (text
+rarely covers a tenth of a cell), each cell then takes the brightest of its neighbours so a cell
+filled by a heading isn't mistaken for ink, and the grid is smoothed. Dividing each pixel by the
+paper under it cancels shadows and uneven light, so the paper comes out white corner to corner while
+ink, stamps and photos keep their colour. Greyscale is plain luminance; Original changes nothing.
+
+### The rest of the tool
+
+- **CameraX** (`camera-camera2`, `camera-lifecycle`, `camera-view`, +0.53 MB measured) gives a
+  viewfinder inside FormKit, so a ten-page document is ten shutter taps, not ten trips to the camera app.
+  `CAMERA` is asked for only when Scan is tapped, and a phone with no camera (or a refused
+  permission) still scans from photos. `android.hardware.camera.any` is declared as not required.
+- **Each shot goes straight to the page check**, so a page whose edges weren't found is caught while
+  the document is still on the table. Corners are dragged with a magnifier following the finger,
+  because the corner being placed is exactly what the finger covers. The outline turns red and Done
+  waits if the shape folds over itself.
+- **Screen readers** can't drag: every corner is a 48 dp target with Move left/right/up/down actions
+  that nudge it 1% of the photo.
+- **The KB target reuses Milestone 5's fitter.** `PdfCompressor` now takes any source of page images
+  (`PageImages`), so scanned pages go through exactly the same budget split and on-disk check as
+  Compress PDF. Pages are straightened once at 2400 px, and the fitting pass re-encodes from those.
+  With no limit, pages are written at JPEG quality 88.
+- **Page size:** A4 or Letter (auto portrait or landscape), or "Fit to page", which shows the scan at
+  205 DPI so a straightened A4 page comes out A4-sized.
+- **Previews:** every change redraws the page at 900 px so the list and the adjust screen show the
+  finished look, not the raw photo. One render runs at a time and repeated edits collapse into the
+  last one.
+
+### Checked on the emulator (API 37)
+
+Two generated photos of a printed form lying at an angle on a wooden desk, with a drop shadow and
+light falling off across the frame (`make_scan_photos.py`):
+
+- **Both pages were found**, and the outline sat on the corners of each page. The list showed
+  straightened, cleaned pages with no desk left in them.
+- **A4, 200 KB limit:** the two pages came out as a 194 KB PDF; the saved file measured 194,941
+  bytes on disk.
+- **Camera:** tapping Scan asked for the camera there and then. The viewfinder, shutter, page count
+  and Done all worked. The emulator's virtual scene holds no document, so the finder returned
+  nothing and the page opened with the corners at the photo's edges and "FormKit couldn't find this
+  page's edges" — the fallback §4.5 asks for.
+- **Corners:** dragging one moved it with the magnifier following the finger; Reset corners put the
+  found outline back exactly.
+- **Black & white** and **Rotate** both redrew the preview.
+- **Process death** (`am kill` with the app in the background): the page list came back with its
+  page, its look and its thumbnail.
+- **Back** from the page list asked "Discard this scan?" — Keep scanning kept the pages, Discard
+  emptied the tool.
+- **Instrumented tests (30, all passing)** include four new ones drawing a page on a dark table with
+  Android's own canvas: the outline is found within 24 px of where it was drawn, the straightened
+  page matches the drawn shape's own side lengths, two scanned pages fit under a 150 KB limit, and
+  three pages come out as three pages with no limit.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
@@ -405,6 +498,7 @@ download size Play would serve, which is what the 25 MB budget refers to.
 | 4 – passport photo | 26.50 MB | 5.93–7.86 MiB (6,220,787–8,243,468 bytes) | +MediaPipe tasks-vision and the 244 KB selfie model. By ABI: armeabi-v7a 6.22 MB, arm64-v8a 6.99–7.00 MB, x86_64 7.75 MB, x86 8.23 MB. The AAB holds every ABI's native library, so it's much bigger than any download. |
 | 5 – PDF tools | 28.99 MB | 7.78–9.71 MiB (8,154,898–10,179,971 bytes) | +PdfBox-Android without BouncyCastle: about +1.9 MB. By ABI: armeabi-v7a 8.15 MB, arm64-v8a 8.92–8.94 MB, x86_64 9.68 MB, x86 10.16 MB. |
 | 6 – ads and Pro | 33.41 MB | 9.73–11.68 MiB (10,197,992–12,246,843 bytes) | +play-services-ads (full), UMP and Play Billing: about +2.0 MB. By ABI: armeabi-v7a 10.20–10.24 MB, arm64-v8a 10.96–11.00 MB, x86_64 11.72–11.76 MB, x86 12.21–12.25 MB. |
+| 7 – scan to PDF | 35.00 MB | 10.24–12.19 MiB (10,732,098–12,784,741 bytes) | +CameraX (camera2, lifecycle, view): about +0.53 MB. The page finder, the straightening and the filters add no dependency at all. By ABI: armeabi-v7a 10.73–10.77 MB, arm64-v8a 11.50–11.54 MB, x86_64 12.27–12.31 MB, x86 12.75–12.78 MB. |
 
 ## Test environment notes
 

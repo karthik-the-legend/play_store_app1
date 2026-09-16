@@ -48,6 +48,7 @@ sealed interface PdfProblem {
     data object Failed : PdfProblem
     data object OutOfMemory : PdfProblem
     data object SaveFailed : PdfProblem
+    data object CameraFailed : PdfProblem
     data class TooLarge(val smallestBytes: Long, val maxBytes: Long) : PdfProblem
     data class AlreadySmall(val sizeBytes: Long, val maxBytes: Long) : PdfProblem
 }

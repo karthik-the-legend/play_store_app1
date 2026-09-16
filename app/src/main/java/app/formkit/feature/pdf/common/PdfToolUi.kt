@@ -107,6 +107,8 @@ fun PdfProblemDialog(problem: PdfProblem, onDismiss: () -> Unit) {
             stringResource(R.string.resize_problem_memory_title) to stringResource(R.string.resize_problem_memory_body)
         PdfProblem.SaveFailed ->
             stringResource(R.string.resize_problem_save_title) to stringResource(R.string.resize_problem_save_body)
+        PdfProblem.CameraFailed ->
+            stringResource(R.string.pdf_problem_camera_title) to stringResource(R.string.pdf_problem_camera_body)
         is PdfProblem.TooLarge ->
             stringResource(R.string.pdf_problem_too_large_title, formatSize(problem.maxBytes)) to
                 stringResource(R.string.pdf_problem_too_large_body, formatSize(problem.smallestBytes))

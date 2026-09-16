@@ -22,6 +22,7 @@ import app.formkit.feature.pdf.photos.ImagesToPdfRoute
 import app.formkit.feature.pdf.split.SplitPdfRoute
 import app.formkit.feature.recent.RecentFilesScreen
 import app.formkit.feature.resize.ResizeRoute
+import app.formkit.feature.scan.ScanRoute
 import app.formkit.feature.settings.SettingsScreen
 import app.formkit.feature.signature.SignatureRoute
 import kotlinx.serialization.Serializable
@@ -76,6 +77,7 @@ fun FormKitNavHost(
                 Tool.Signature -> SignatureRoute(onBack = onBack)
                 Tool.PassportPhoto -> PassportRoute(onBack = onBack)
                 Tool.ImagesToPdf -> ImagesToPdfRoute(onBack = onBack)
+                Tool.ScanToPdf -> ScanRoute(onBack = onBack)
                 Tool.CompressPdf -> CompressPdfRoute(onBack = onBack)
                 Tool.MergePdf -> MergePdfRoute(onBack = onBack)
                 Tool.SplitPdf -> SplitPdfRoute(onBack = onBack)

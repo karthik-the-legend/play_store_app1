@@ -26,9 +26,20 @@ data class CompressProgress(val stage: Stage, val page: Int, val pageCount: Int)
     enum class Stage { Analysing, Compressing, Writing }
 }
 
+/** Pages to fit under a byte limit: where each goes, and a way to draw it at up to a given size. */
+interface PageImages {
+    val pageCount: Int
+
+    fun placement(index: Int): PagePlacement
+
+    /** Page [index] as a new bitmap, no more than [maxLongEdge] pixels on its long side. */
+    fun render(index: Int, maxLongEdge: Int): Bitmap
+}
+
 /**
- * Shrinks a PDF to a byte limit by turning each page into a JPEG (§4.1's search, per page) and
- * rebuilding the document. Text stops being selectable, which the tool screen warns about.
+ * Makes a PDF of page images no bigger than a byte limit, using §4.1's search on every page. Compress
+ * PDF feeds it the pages of an existing PDF (so text stops being selectable, which the tool warns
+ * about); Scan to PDF feeds it straightened photos.
  *
  * 1. A quick pass renders a small preview of every page. Its JPEG size is the page's weight (busy
  *    pages get more bytes), and a tiny low-quality encode estimates the page's floor.
@@ -51,72 +62,80 @@ class PdfCompressor @Inject constructor(
         output: File,
         onProgress: (CompressProgress) -> Unit = {},
     ): CompressOutcome = withContext(dispatcher) {
-        workDir.mkdirs()
-        PdfRasterizer(source).use { raster ->
-            val pageCount = raster.pageCount
-            require(pageCount > 0) { "The PDF has no pages" }
+        PdfRasterizer(source).use { raster -> fit(RasterPages(raster), maxBytes, workDir, output, onProgress) }
+    }
 
-            val pageSizes = ArrayList<Pair<Float, Float>>(pageCount)
-            val weights = ArrayList<Long>(pageCount)
-            val floors = ArrayList<Long>(pageCount)
+    suspend fun fit(
+        pages: PageImages,
+        maxBytes: Long,
+        workDir: File,
+        output: File,
+        onProgress: (CompressProgress) -> Unit = {},
+    ): CompressOutcome = withContext(dispatcher) {
+        workDir.mkdirs()
+        val pageCount = pages.pageCount
+        require(pageCount > 0) { "The PDF has no pages" }
+
+        val placements = ArrayList<PagePlacement>(pageCount)
+        val weights = ArrayList<Long>(pageCount)
+        val floors = ArrayList<Long>(pageCount)
+        for (index in 0 until pageCount) {
+            ensureActive()
+            onProgress(CompressProgress(CompressProgress.Stage.Analysing, index + 1, pageCount))
+            placements += pages.placement(index)
+            val preview = pages.render(index, PREVIEW_LONG_EDGE)
+            try {
+                weights += codec.encode(preview, OutputFormat.Jpeg, PREVIEW_QUALITY).size.toLong()
+                floors += floorBytes(preview)
+            } finally {
+                preview.recycle()
+            }
+        }
+        if (ByteBudget.smallestTotal(floors) > maxBytes) {
+            return@withContext CompressOutcome.TooLarge(ByteBudget.smallestTotal(floors))
+        }
+
+        var scale = 1.0
+        repeat(MAX_ATTEMPTS) {
+            val budgets = ByteBudget.split(maxBytes, weights, floors, scale)
+                ?: return@withContext CompressOutcome.TooLarge(ByteBudget.smallestTotal(floors))
+
+            val written = ArrayList<ImagePage>(pageCount)
+            var pageMissed = false
             for (index in 0 until pageCount) {
                 ensureActive()
-                onProgress(CompressProgress(CompressProgress.Stage.Analysing, index + 1, pageCount))
-                pageSizes += raster.pageSize(index)
-                val preview = raster.render(index, RENDER_DPI, PREVIEW_LONG_EDGE)
-                try {
-                    weights += codec.encode(preview, OutputFormat.Jpeg, PREVIEW_QUALITY).size.toLong()
-                    floors += floorBytes(preview)
+                onProgress(CompressProgress(CompressProgress.Stage.Compressing, index + 1, pageCount))
+                val rendered = pages.render(index, MAX_RENDER_EDGE)
+                val outcome = try {
+                    SizeTargeter(codec).fit(rendered, SizeTarget(maxBytes = budgets[index], format = OutputFormat.Jpeg, allowDownscale = true))
                 } finally {
-                    preview.recycle()
+                    rendered.recycle()
+                }
+                when (outcome) {
+                    is TargetOutcome.Fitted -> {
+                        val jpeg = File(workDir, "page-$index.jpg").apply { writeBytes(outcome.bytes) }
+                        val placement = placements[index]
+                        written += ImagePage(jpeg, placement.pageWidth, placement.pageHeight, placement.image)
+                    }
+                    is TargetOutcome.TooLarge -> {
+                        floors[index] = max(floors[index], outcome.smallestBytes)
+                        pageMissed = true
+                    }
+                    is TargetOutcome.TooSmall -> error("No minimum size was requested")
                 }
             }
-            if (ByteBudget.smallestTotal(floors) > maxBytes) {
-                return@withContext CompressOutcome.TooLarge(ByteBudget.smallestTotal(floors))
-            }
+            if (pageMissed) return@repeat
 
-            var scale = 1.0
-            repeat(MAX_ATTEMPTS) {
-                val budgets = ByteBudget.split(maxBytes, weights, floors, scale)
-                    ?: return@withContext CompressOutcome.TooLarge(ByteBudget.smallestTotal(floors))
-
-                val pages = ArrayList<ImagePage>(pageCount)
-                var pageMissed = false
-                for (index in 0 until pageCount) {
-                    ensureActive()
-                    onProgress(CompressProgress(CompressProgress.Stage.Compressing, index + 1, pageCount))
-                    val rendered = raster.render(index, RENDER_DPI, MAX_RENDER_EDGE)
-                    val outcome = try {
-                        SizeTargeter(codec).fit(rendered, SizeTarget(maxBytes = budgets[index], format = OutputFormat.Jpeg, allowDownscale = true))
-                    } finally {
-                        rendered.recycle()
-                    }
-                    when (outcome) {
-                        is TargetOutcome.Fitted -> {
-                            val jpeg = File(workDir, "page-$index.jpg").apply { writeBytes(outcome.bytes) }
-                            val (width, height) = pageSizes[index]
-                            pages += ImagePage(jpeg, width, height, PointRect(0f, 0f, width, height))
-                        }
-                        is TargetOutcome.TooLarge -> {
-                            floors[index] = max(floors[index], outcome.smallestBytes)
-                            pageMissed = true
-                        }
-                        is TargetOutcome.TooSmall -> error("No minimum size was requested")
-                    }
-                }
-                if (pageMissed) return@repeat
-
-                ensureActive()
-                onProgress(CompressProgress(CompressProgress.Stage.Writing, pageCount, pageCount))
-                documents.writeImagePages(pages, output)
-                val written = output.length()
-                if (written <= maxBytes) return@withContext CompressOutcome.Done(written, pageCount)
-                val overhead = ByteBudget.overhead(pageCount)
-                scale = (scale * (maxBytes - overhead).toDouble() / max(1L, written - overhead) * SHRINK_MARGIN).coerceIn(MIN_SCALE, 1.0)
-            }
-            output.delete()
-            CompressOutcome.TooLarge(ByteBudget.smallestTotal(floors))
+            ensureActive()
+            onProgress(CompressProgress(CompressProgress.Stage.Writing, pageCount, pageCount))
+            documents.writeImagePages(written, output)
+            val size = output.length()
+            if (size <= maxBytes) return@withContext CompressOutcome.Done(size, pageCount)
+            val overhead = ByteBudget.overhead(pageCount)
+            scale = (scale * (maxBytes - overhead).toDouble() / max(1L, size - overhead) * SHRINK_MARGIN).coerceIn(MIN_SCALE, 1.0)
         }
+        output.delete()
+        CompressOutcome.TooLarge(ByteBudget.smallestTotal(floors))
     }
 
     /** Roughly the smallest JPEG this page can be: the size search's 100 px floor at quality 1. */
@@ -135,13 +154,26 @@ class PdfCompressor @Inject constructor(
         }
     }
 
-    private companion object {
-        const val RENDER_DPI = 200f
+    /** An existing PDF's pages, each image filling its original page. */
+    private class RasterPages(private val raster: PdfRasterizer) : PageImages {
+        override val pageCount: Int get() = raster.pageCount
+
+        override fun placement(index: Int): PagePlacement {
+            val (width, height) = raster.pageSize(index)
+            return PagePlacement(width, height, PointRect(0f, 0f, width, height))
+        }
+
+        override fun render(index: Int, maxLongEdge: Int): Bitmap = raster.render(index, RENDER_DPI, maxLongEdge)
+    }
+
+    companion object {
+        /** The largest a page is ever drawn for fitting: A4 at about 200 DPI. */
         const val MAX_RENDER_EDGE = 2400
-        const val PREVIEW_LONG_EDGE = 640
-        const val PREVIEW_QUALITY = 60
-        const val MAX_ATTEMPTS = 4
-        const val SHRINK_MARGIN = 0.97
-        const val MIN_SCALE = 0.05
+        private const val RENDER_DPI = 200f
+        private const val PREVIEW_LONG_EDGE = 640
+        private const val PREVIEW_QUALITY = 60
+        private const val MAX_ATTEMPTS = 4
+        private const val SHRINK_MARGIN = 0.97
+        private const val MIN_SCALE = 0.05
     }
 }

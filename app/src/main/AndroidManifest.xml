@@ -11,6 +11,15 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <!--
+        Scan to PDF uses the camera inside the app, asked for only when the user taps Scan.
+        Phones without a camera can still install FormKit and scan from photos.
+    -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
     <application
         android:name=".FormKitApp"
         android:allowBackup="false"

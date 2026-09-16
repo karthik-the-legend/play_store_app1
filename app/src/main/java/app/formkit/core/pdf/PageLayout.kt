@@ -36,13 +36,20 @@ object PageLayout {
 
     /**
      * Where [image] goes on its page. On A4 and Letter it's scaled to fit inside the margins and
-     * centred. [PageOrientation.Auto] turns the page sideways for a landscape image.
+     * centred. [PageOrientation.Auto] turns the page sideways for a landscape image. Fit-to-image
+     * pages show the image at [fitDpi].
      */
-    fun place(image: PixelSize, paper: PaperSize, orientation: PageOrientation, margin: PageMargin): PagePlacement {
+    fun place(
+        image: PixelSize,
+        paper: PaperSize,
+        orientation: PageOrientation,
+        margin: PageMargin,
+        fitDpi: Float = FIT_TO_IMAGE_DPI,
+    ): PagePlacement {
         val inset = margin.points
         if (paper == PaperSize.FitToImage) {
-            var width = image.width * POINTS_PER_INCH / FIT_TO_IMAGE_DPI
-            var height = image.height * POINTS_PER_INCH / FIT_TO_IMAGE_DPI
+            var width = image.width * POINTS_PER_INCH / fitDpi
+            var height = image.height * POINTS_PER_INCH / fitDpi
             val shrink = min(1f, (MAX_PAGE_POINTS - 2 * inset) / max(width, height))
             width *= shrink
             height *= shrink
