@@ -485,6 +485,69 @@ light falling off across the frame (`make_scan_photos.py`):
   page matches the drawn shape's own side lengths, two scanned pages fit under a 150 KB limit, and
   three pages come out as three pages with no limit.
 
+## Release preparation (Milestone 8)
+
+### R8 broke the release build four times, and only running it found them
+
+Milestones 1–7 were checked on debug builds and by instrumented tests. Neither goes through R8, and
+`assembleRelease` succeeding proves nothing about a minified app at runtime. The first time the
+release bundle was actually installed and opened (16 September 2026), it failed four times in a row:
+
+1. **Crash on startup: `Failed to create an instance of androidx.work.impl.WorkDatabase`.**
+   WorkManager, which the ads SDK pulls in, builds its Room database by name. Room's own rule keeps
+   the generated class but says nothing about its members, so R8 removed the no-argument constructor
+   Room calls. Fixed with `-keep class * extends androidx.room.RoomDatabase { <init>(); }`.
+2. **Crash on the first screen: "Cannot find class with name app.formkit.feature.home.Tool".**
+   Type-safe navigation identifies a route by its class's fully qualified name and looks an enum
+   argument up with `Class.forName`. kotlinx.serialization's rules keep the generated serializers but
+   let R8 rename the classes themselves. Fixed with `@Keep` on the enum and
+   `-keepnames @kotlinx.serialization.Serializable class app.formkit.navigation.**`.
+3. **Every passport photo failed with "Couldn't open this photo".** MediaPipe's tasks are wired
+   through JNI and protobuf-lite, both of which find classes and fields by name, so the segmenter
+   couldn't start; the tool reported it as an unreadable photo. Fixed with
+   `-keep class com.google.mediapipe.** { *; }` and the same for `com.google.protobuf.**`.
+4. **Then the passport tool crashed instead: `no caller found on the stack for: nb1`.** With
+   MediaPipe able to start, its first log statement went through Flogger, which finds the calling
+   class by walking the stack and matching its own class name — a name R8 had changed. Fixed with
+   `-keep class com.google.common.flogger.** { *; }`.
+
+Everything else survived minification untouched: resize, signature, scan, the PDF tools (PdfBox and
+Android's renderer), consent, and the Pro card's offline fallback.
+
+Those keeps cost about 0.6 MB of download, because MediaPipe, protobuf and Flogger are no longer
+shrunk. They could be narrowed class by class later; a passport tool that works is worth more than
+0.6 MB out of a 25 MB budget.
+
+**From now on, a milestone isn't done until the release build has been installed and walked
+through.** The check is: build the bundle, `bundletool build-apks` with the debug key,
+`install-apks`, then open every tool once and watch `adb logcat -b crash`.
+
+### Signing (decided 2026-09-16)
+
+- The upload key's path and passwords come from the developer's own Gradle properties, exactly like
+  the AdMob IDs. Nothing secret is in the repo.
+- **With no key configured the release build comes out unsigned**, rather than falling back to the
+  debug key, so a missing key can't quietly ship a bundle signed with a key anyone has.
+- Play App Signing stays on, so the upload key can be replaced if it's ever lost.
+- `RELEASE.md` has the `keytool` command and the properties to set; the owner runs it, and the
+  passwords never pass through here.
+
+### Version
+
+1.0.0, `versionCode` 1. `RELEASE.md` says what to raise for each later upload.
+
+### Store assets
+
+- `docs/store-listing.md` — title (24 characters, keyword-led: "Photo Resize in KB & PDF"), short
+  description, full description and what each of the eight screenshots must show.
+- `docs/data-safety.md` — Play's Data safety answers. Everything declared is the AdMob SDK's doing;
+  files and purchase history are deliberately *not* declared, with the reasons written down.
+- `docs/privacy-policy.md` — the policy to publish through GitHub Pages.
+- `docs/launch-checklist.md` — the Play Console steps in order, including the closed test with 12
+  testers for 14 days that a personal developer account now needs.
+- `docs/store-assets/` — the 512 px icon and the 1024 × 500 feature graphic, drawn from the app's own
+  launcher artwork so they match the icon on the phone.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
@@ -499,6 +562,7 @@ download size Play would serve, which is what the 25 MB budget refers to.
 | 5 – PDF tools | 28.99 MB | 7.78–9.71 MiB (8,154,898–10,179,971 bytes) | +PdfBox-Android without BouncyCastle: about +1.9 MB. By ABI: armeabi-v7a 8.15 MB, arm64-v8a 8.92–8.94 MB, x86_64 9.68 MB, x86 10.16 MB. |
 | 6 – ads and Pro | 33.41 MB | 9.73–11.68 MiB (10,197,992–12,246,843 bytes) | +play-services-ads (full), UMP and Play Billing: about +2.0 MB. By ABI: armeabi-v7a 10.20–10.24 MB, arm64-v8a 10.96–11.00 MB, x86_64 11.72–11.76 MB, x86 12.21–12.25 MB. |
 | 7 – scan to PDF | 35.00 MB | 10.24–12.19 MiB (10,732,098–12,784,741 bytes) | +CameraX (camera2, lifecycle, view): about +0.53 MB. The page finder, the straightening and the filters add no dependency at all. By ABI: armeabi-v7a 10.73–10.77 MB, arm64-v8a 11.50–11.54 MB, x86_64 12.27–12.31 MB, x86 12.75–12.78 MB. |
+| 8 – release prep | 36.04 MB | 10.83–12.80 MiB (11,354,004–13,420,782 bytes) | No new library: +0.62 MB is the keep rules that stop R8 shrinking MediaPipe, protobuf and Flogger, which is what it cost to make the minified build work at all. By ABI: armeabi-v7a 11.35–11.41 MB, arm64-v8a 12.12–12.17 MB, x86_64 12.89–12.94 MB, x86 13.37–13.42 MB. |
 
 ## Test environment notes
 

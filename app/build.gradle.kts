@@ -20,6 +20,15 @@ val releaseNativeUnit: String? = providers.gradleProperty("formkit.admob.native"
 val hasReleaseAdIds = listOf(releaseAdmobAppId, releaseInterstitialUnit, releaseRewardedUnit, releaseNativeUnit)
     .all { !it.isNullOrBlank() }
 
+// The upload key comes from ~/.gradle/gradle.properties too (see RELEASE.md). Without it the
+// release build is simply unsigned, so a missing key can never quietly ship an unsigned bundle.
+val uploadStorePath: String? = providers.gradleProperty("formkit.keystore.path").orNull
+val uploadStorePassword: String? = providers.gradleProperty("formkit.keystore.password").orNull
+val uploadKeyAlias: String? = providers.gradleProperty("formkit.key.alias").orNull
+val uploadKeyPassword: String? = providers.gradleProperty("formkit.key.password").orNull
+val hasUploadKey = listOf(uploadStorePath, uploadStorePassword, uploadKeyAlias, uploadKeyPassword)
+    .all { !it.isNullOrBlank() } && File(uploadStorePath!!).exists()
+
 fun quoted(value: String?) = "\"${value.orEmpty()}\""
 
 android {
@@ -33,9 +42,20 @@ android {
         minSdk = 24
         targetSdk = 37
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (hasUploadKey) {
+            create("upload") {
+                storeFile = File(uploadStorePath!!)
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -52,6 +72,7 @@ android {
             buildConfigField("boolean", "CONSENT_DEBUG_EEA", providers.gradleProperty("formkit.consentDebugEea").orElse("false").get())
         }
         release {
+            signingConfig = if (hasUploadKey) signingConfigs.getByName("upload") else null
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

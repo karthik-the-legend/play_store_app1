@@ -1,9 +1,15 @@
 package app.formkit.feature.home
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.Keep
 import androidx.annotation.StringRes
 import app.formkit.R
 
+/**
+ * [Keep] because this enum is a navigation argument: Navigation looks it up by its fully qualified
+ * name at runtime, so R8 renaming it breaks every tool in a release build.
+ */
+@Keep
 enum class Tool(
     @StringRes val title: Int,
     @StringRes val description: Int,
