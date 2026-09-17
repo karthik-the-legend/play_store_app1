@@ -76,8 +76,8 @@ crash report back into readable line numbers. Play accepts it on the App Bundle 
 
 ## 5. What to fill in before the first upload
 
-- `docs/privacy-policy.md` — replace `REPLACE_WITH_YOUR_EMAIL` with the address you want users to
-  write to, then publish it (see `docs/launch-checklist.md`).
+- `docs/privacy-policy.md` — ready, with the contact address filled in; publish it through GitHub
+  Pages (see `docs/launch-checklist.md`).
 - `docs/store-listing.md` — the listing text, ready to paste.
 - `docs/data-safety.md` — the answers to Play's Data safety form.
 - `docs/launch-checklist.md` — everything else Play asks for, in order.

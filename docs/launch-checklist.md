@@ -7,8 +7,8 @@ password, so it can't be done from the repo.
 
 Play won't accept the listing without a public URL.
 
-1. In `docs/privacy-policy.md`, replace `REPLACE_WITH_YOUR_EMAIL` with the address users should write
-   to, and commit.
+1. The contact address in `docs/privacy-policy.md` is filled in (karthikks1112@gmail.com); change it
+   there if you'd rather users wrote somewhere else.
 2. On GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, branch
    `main`, folder `/docs`, then Save.
 3. A few minutes later the policy is at

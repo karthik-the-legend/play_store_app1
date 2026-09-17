@@ -1,6 +1,6 @@
 # FormKit privacy policy
 
-**Last updated: 16 September 2026**
+**Last updated: 17 September 2026**
 
 FormKit resizes photos, makes passport photos, cleans up signatures, scans documents and works with
 PDFs. Everything it does happens on your phone.
@@ -69,4 +69,4 @@ app's listing will link to it.
 
 ## Contact
 
-Questions about privacy in FormKit: **REPLACE_WITH_YOUR_EMAIL**
+Questions about privacy in FormKit: [karthikks1112@gmail.com](mailto:karthikks1112@gmail.com)
