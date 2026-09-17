@@ -32,8 +32,12 @@ MediaPipe, AdMob, UMP, Play Billing.
 
 ## App identity
 
-- **applicationId `app.formkit`** is a placeholder. It can never change after the first Play
-  upload, so confirm the final ID before Milestone 8.
+- **applicationId `app.formkit`** is final (confirmed by the owner on 2026-09-17, before the first
+  Play upload; no public Play app used it). It can never change once uploaded.
+- **Upload key:** made by the owner (`D:\keys\formkit-upload.jks`, alias `formkit`, 4096-bit RSA,
+  valid to 2054). SHA-256 fingerprint
+  `16:63:5C:72:B5:89:F5:DE:50:F3:A4:AE:58:B3:69:F6:D6:07:E3:0F:AA:67:A4:63:20:65:40:98:3D:39:4E:B7`.
+  Its passwords live only in the owner's Gradle properties.
 - The app name "FormKit" is also the name of a well-known web forms library. It's fine as a
   working name; the store title should lead with keywords anyway.
 
