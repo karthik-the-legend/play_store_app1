@@ -10,6 +10,7 @@ import android.graphics.pdf.PdfDocument
 import app.formkit.core.imaging.AndroidImageCodec
 import app.formkit.core.imaging.PixelSize
 import app.formkit.core.imaging.passport.DirtyRect
+import app.formkit.core.imaging.passport.EdgeColors
 import app.formkit.core.imaging.passport.ForegroundMask
 import app.formkit.core.imaging.passport.Placement
 import app.formkit.core.imaging.passport.SheetLayout
@@ -31,27 +32,49 @@ class PassportRenderer @Inject constructor(
         return cutout
     }
 
-    /** Copies the mask's alpha into [cutout] within [dirty], after a brush stroke. */
+    /**
+     * Copies the mask's alpha into [cutout] within [dirty], after a brush stroke, and takes the old
+     * background's colour out of the soft edge (see [EdgeColors]). Large areas go in tiles, so the
+     * whole photo never needs more than a few megabytes of working memory.
+     */
     fun updateCutout(cutout: Bitmap, photo: Bitmap, mask: ForegroundMask, dirty: DirtyRect) {
         if (dirty.isEmpty) return
         val left = max(0, dirty.left)
         val top = max(0, dirty.top)
         val right = min(photo.width, dirty.right)
         val bottom = min(photo.height, dirty.bottom)
-        val width = right - left
-        val height = bottom - top
-        if (width <= 0 || height <= 0) return
+        var tileTop = top
+        while (tileTop < bottom) {
+            val tileBottom = min(bottom, tileTop + TILE)
+            var tileLeft = left
+            while (tileLeft < right) {
+                val tileRight = min(right, tileLeft + TILE)
+                updateTile(cutout, photo, mask, tileLeft, tileTop, tileRight, tileBottom)
+                tileLeft = tileRight
+            }
+            tileTop = tileBottom
+        }
+    }
+
+    private fun updateTile(cutout: Bitmap, photo: Bitmap, mask: ForegroundMask, left: Int, top: Int, right: Int, bottom: Int) {
+        // The edge colours look at neighbouring pixels, so read a margin around the tile.
+        val margin = EdgeColors.RADIUS
+        val readLeft = max(0, left - margin)
+        val readTop = max(0, top - margin)
+        val width = min(photo.width, right + margin) - readLeft
+        val height = min(photo.height, bottom + margin) - readTop
         val pixels = IntArray(width * height)
-        photo.getPixels(pixels, 0, width, left, top, width, height)
+        photo.getPixels(pixels, 0, width, readLeft, readTop, width, height)
         for (y in 0 until height) {
-            val maskRow = (top + y) * mask.width
+            val maskRow = (readTop + y) * mask.width
             for (x in 0 until width) {
-                val alpha = mask.alpha[maskRow + left + x].toInt() and 0xFF
+                val alpha = mask.alpha[maskRow + readLeft + x].toInt() and 0xFF
                 val i = y * width + x
                 pixels[i] = (pixels[i] and 0x00FFFFFF) or (alpha shl 24)
             }
         }
-        cutout.setPixels(pixels, 0, width, left, top, width, height)
+        EdgeColors.decontaminate(pixels, width, height, left - readLeft, top - readTop, right - readLeft, bottom - readTop)
+        cutout.setPixels(pixels, (top - readTop) * width + (left - readLeft), width, left, top, right - left, bottom - top)
     }
 
     /** The finished photo: the background colour with the cut-out person placed on it. */
@@ -141,5 +164,6 @@ class PassportRenderer @Inject constructor(
         const val WATERMARK_COLOR = 0xFFB4B4B8.toInt()
         const val MAX_WATERMARK_TEXT_PX = 22f
         const val POINTS_PER_INCH = 72f
+        const val TILE = 512
     }
 }

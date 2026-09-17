@@ -603,6 +603,58 @@ the full on-device test suite plus the minified release build, tool by tool.
 - On Android 7 a `pm grant` for storage logs a remount in "default" mode, which is why the save
   test can't write there (above).
 
+## Background removal, refined (after the first real-phone test)
+
+The owner's first test on a real phone (17 September 2026) found the passport tool leaving
+background behind, on a photo of the owner: head bowed under a black cap, in front of a dark banner and a
+green wall. Two separate faults:
+
+- **Part of the banner was kept.** The banner is dark and touches the black cap, and the model sees
+  the whole photo squeezed to 256 × 256, so it took the two for one shape: 3,465 banner pixels
+  were kept, and the "crown" landed 55 px too high.
+- **A green rim ran round the jacket.** Stretched back to 1086 × 1448, each of the model's cells
+  covers about six pixels, so edges came back blocky and a few pixels out into the wall.
+
+A bigger model wasn't an option: Google's multi-class segmenter is about 16 MB, which would break the
+25 MB budget. Instead, all in plain Kotlin (`MaskRefinement`, `EdgeColors`):
+
+1. **A second, closer pass.** The model runs again on a square around the head and upper body (1.25 ×
+   the wider of the person's width and 55% of their height), and that answer replaces the first
+   inside the square, blended over a 5% band at its inner edges. This alone removed the banner:
+   0 pixels kept, crown on the cap. Skipped when the person already fills the photo.
+2. **Edges snapped to the photo.** A guided filter (He, Sun and Tang) over the photo's brightness,
+   radius 16 px at half resolution, ε 0.001, moves the mask's edges onto the photo's own edges,
+   then a smooth step from 0.5 to 0.7 tightens them. Only the area around the person is processed.
+3. **Islands dropped.** Shapes less than a quarter of the largest one's size are cleared.
+4. **Edge colours cleaned.** Each soft edge pixel takes the colour of the surely-person pixels within
+   6 px (weighted by alpha⁴) instead of its own, which is partly wall. Tiles with no soft pixels are
+   skipped, so this costs almost nothing away from the outline.
+
+Measured with `RealPhotoPassportCheck` on that photo (kept as a local file, never in the repository),
+scored by `banner` = mask pixels above the cap, `green` = greenish pixels in the framed photo:
+
+| | banner | green | person kept |
+|---|---|---|---|
+| Before | 3,465 | 595 | 99.6% |
+| Second pass only | 0 | 329 | 99.6% |
+| **Now** | **0** | **170** | **99.7%** |
+
+The guided filter settings came from five variants run on the same photo (radius 8/16/24,
+ε 10⁻³/10⁻⁴, step 0.4–0.6 or 0.5–0.7); the tighter step removed the most green without losing any of
+the person. The two plain NASA portraits used since Milestone 4 lost nothing either: their hair edges
+came out crisper, and the grey halo above the hair is gone.
+
+Timings on the Android 17 emulator, debug build, model already loaded: both model passes 0.26–0.57 s,
+refinement 0.22 s, cut-out 0.46 s. A release build runs faster.
+
+**Still weak:** a bowed head under a cap confuses the head measurement, so auto-framing includes more
+body than a passport photo should. That pose isn't one a passport photo can use anyway; Position fixes
+the framing by hand.
+
+`RealPhotoPassportCheck` does nothing in a normal test run. Given a photo already on the device, it
+writes the mask and the framed photo, for the app and for the variants, to the app's files folder;
+the class comment has the command.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
