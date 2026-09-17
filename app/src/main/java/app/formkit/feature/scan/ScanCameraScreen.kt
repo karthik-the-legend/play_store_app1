@@ -29,6 +29,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,6 +57,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.formkit.R
 import app.formkit.core.ui.theme.Spacing
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -79,6 +81,8 @@ fun ScanCameraScreen(
     val scope = rememberCoroutineScope()
     val latestProblem by rememberUpdatedState(onProblem)
     var capturing by remember { mutableStateOf(false) }
+    // Which shot is current. A shot that times out is written off, so its late result is ignored.
+    var shot by remember { mutableIntStateOf(0) }
 
     val controller = remember(context) {
         LifecycleCameraController(context).apply {
@@ -110,22 +114,36 @@ fun ScanCameraScreen(
                     latestProblem()
                     return@launch
                 }
+                val thisShot = ++shot
                 controller.takePicture(
                     ImageCapture.OutputFileOptions.Builder(photo).build(),
                     ContextCompat.getMainExecutor(context),
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(results: ImageCapture.OutputFileResults) {
+                            if (thisShot != shot) {
+                                photo.delete()
+                                return
+                            }
                             capturing = false
                             onCaptured(photo)
                         }
 
                         override fun onError(exception: ImageCaptureException) {
-                            capturing = false
                             photo.delete()
+                            if (thisShot != shot) return
+                            capturing = false
                             latestProblem()
                         }
                     },
                 )
+                // A camera that accepts the shot but never delivers the photo (seen on the Android 10
+                // emulator's virtual camera) would otherwise leave the shutter spinning for good.
+                delay(CAPTURE_TIMEOUT_MILLIS)
+                if (capturing && thisShot == shot) {
+                    shot++
+                    capturing = false
+                    latestProblem()
+                }
             }
         }
     }
@@ -211,3 +229,6 @@ private fun Shutter(enabled: Boolean, onClick: () -> Unit) {
         }
     }
 }
+
+/** Real phones take a photo in a second or two; this is long enough for a slow one. */
+private const val CAPTURE_TIMEOUT_MILLIS = 20_000L

@@ -388,6 +388,13 @@ private fun PassportEditorScreen(
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
+                if (!state.removalAvailable && !state.isPreparing) {
+                    Text(
+                        stringResource(R.string.passport_removal_unavailable),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     EditorMode.entries.forEachIndexed { index, mode ->
                         SegmentedButton(

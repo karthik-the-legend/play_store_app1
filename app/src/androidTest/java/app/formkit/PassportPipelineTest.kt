@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -19,6 +20,7 @@ import app.formkit.core.imaging.passport.MediaPipePersonSegmenter
 import app.formkit.core.imaging.passport.PassportPreset
 import app.formkit.core.imaging.passport.Placement
 import app.formkit.core.imaging.passport.PrintSheets
+import app.formkit.core.imaging.passport.SegmentationUnavailableException
 import app.formkit.feature.passport.PassportRenderer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -112,13 +114,22 @@ class PassportPipelineTest {
     }
 
     @Test
-    fun theBundledSegmenterLoadsAndReturnsAMaskAtTheImageSize() = runBlocking {
+    fun theSegmenterReturnsAMaskAtTheImageSizeOrOnAndroid7SaysItCannotRun() = runBlocking {
         val image = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.rgb(120, 130, 140)) }
+        val segmenter = MediaPipePersonSegmenter(context, Dispatchers.Default)
 
-        val mask = MediaPipePersonSegmenter(context, Dispatchers.Default).segment(image)
-
-        assertEquals(640, mask.width)
-        assertEquals(480, mask.height)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val mask = segmenter.segment(image)
+            assertEquals(640, mask.width)
+            assertEquals(480, mask.height)
+        } else {
+            // MediaPipe's native code needs Android 8. Loading it used to crash the whole app; now it's
+            // reported instead, and the second call doesn't try to load it again.
+            repeat(2) {
+                val failure = runCatching { segmenter.segment(image) }.exceptionOrNull()
+                assertTrue("expected SegmentationUnavailableException, got $failure", failure is SegmentationUnavailableException)
+            }
+        }
     }
 
     /** An orange "person" block in the middle of a grey photo, with a mask that matches it. */

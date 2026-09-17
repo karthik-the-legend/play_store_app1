@@ -20,6 +20,24 @@ class ForegroundMaskTest {
     }
 
     @Test
+    fun `a solid mask keeps the whole photo`() {
+        val mask = ForegroundMask.solid(40, 30)
+
+        assertEquals(1f, mask.coverage(), 0f)
+        assertEquals(255, mask.at(0, 0))
+        assertEquals(255, mask.at(39, 29))
+    }
+
+    @Test
+    fun `coverage counts pixels that are mostly person`() {
+        // One solid pixel, one at the halfway mark, one faint, one empty.
+        val mask = ForegroundMask(4, 1, byteArrayOf(255.toByte(), 128.toByte(), 60, 0))
+
+        assertEquals(0.5f, mask.coverage(), 0f)
+        assertEquals(0f, solid(10, 10, 0).coverage(), 0f)
+    }
+
+    @Test
     fun `erasing clears the middle of the brush and fades at its edge`() {
         val mask = solid(100, 100, 255)
 

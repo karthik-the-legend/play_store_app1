@@ -236,6 +236,7 @@
     <string name="cd_undo_touch_up">Undo last touch-up</string>
     <string name="passport_clear_touch_ups">Undo all</string>
     <string name="passport_no_person">No person was found in this photo. You can still position it and use Touch up, or choose a clearer portrait.</string>
+    <string name="passport_removal_unavailable">Automatic background removal needs Android 8 or newer. Position the photo, then use Touch up to erase the background by hand.</string>
     <string name="passport_section_size">Photo size</string>
     <string name="passport_size_details">%1$s px at %2$d DPI</string>
     <string name="passport_size_india">India 35×45 mm</string>

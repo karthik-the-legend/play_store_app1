@@ -548,6 +548,61 @@ through.** The check is: build the bundle, `bundletool build-apks` with the debu
 - `docs/store-assets/` — the 512 px icon and the 1024 × 500 feature graphic, drawn from the app's own
   launcher artwork so they match the icon on the phone.
 
+## Older Android versions (after Milestone 8)
+
+Until 17 September 2026 everything had run on one Android 17 emulator, while the app claims to
+support Android 7 and up. Three more emulators were added (Google APIs x86_64 images) and each got
+the full on-device test suite plus the minified release build, tool by tool.
+
+| | Android 7.0 (API 24) | Android 10 (API 29) | Android 13 (API 33) |
+|---|---|---|---|
+| On-device tests | 30 / 30 | 30 / 30 | 30 / 30 |
+| Photo picking | falls back to the system file picker | system file picker | new photo picker |
+| Resize to 20 KB | 4.6 MB → 19 KB | 4.6 MB → 19 KB | 4.6 MB → 19 KB |
+| Save | asks for storage; Deny explains and points to Share, Allow saves | no prompt, saved | no prompt, saved |
+| Passport photo | **crashed** → fixed, see below | background removed | background removed |
+| Signature | works | works | works |
+| Scan (from a photo) | edges found, 192 KB under 200 KB | 194 KB, saved | 189 KB, saved |
+| Compress PDF | covered by the on-device test | 194 KB → 96 KB | 194 KB → 96 KB |
+| In-app camera | asks, captures | captures (see below) | asks, captures |
+
+### What it found, and what changed
+
+1. **Passport photos crashed the whole app on Android 7.** MediaPipe's native library calls
+   `strtod_l`, which Android's C library only has from 8.0, so loading it throws
+   `UnsatisfiedLinkError` — an `Error`, which the tool's `catch (Exception)` never saw.
+   `MediaPipePersonSegmenter` now reports `SegmentationUnavailableException` instead: straight away
+   below Android 8, and after any other failure to load its native code (remembered, because a class
+   whose static setup failed can't be used again). The passport tool then keeps the whole photo,
+   skips auto-framing and says "Automatic background removal needs Android 8 or newer. Position the
+   photo, then use Touch up to erase the background by hand." Everything else works on Android 7.
+   *Alternative not taken:* raising minSdk to 26 would drop Android 7 users entirely for the sake of
+   one feature; the spec says minSdk 24.
+2. **A photo with nobody in it gave a blank passport photo.** The segmenter's empty mask erased
+   everything, so Create photo produced a plain white rectangle. When under 1% of the photo is
+   marked as person, the whole photo is now kept (the "No person was found" message still shows),
+   so Touch up can erase the background by hand instead of the user getting a blank page.
+3. **A capture that never finished left the shutter spinning forever.** On the Android 10 emulator's
+   *virtual-scene* camera the capture request completes but the JPEG never arrives — Android's own
+   Camera app can't save a photo there either, and with the emulator's plain *emulated* camera
+   FormKit captures in under 5 seconds, so the camera code itself is fine. Real phones can still have
+   flaky cameras, so a shot now times out after 20 seconds, the camera closes, and FormKit shows
+   "Couldn't use the camera", which points to scanning from photos. A photo that turns up after the
+   timeout is discarded. Checked by reproducing the stuck capture.
+4. **The save test couldn't write to Pictures on Android 7.** The app asks for storage when Save is
+   tapped (checked by hand: Deny and Allow both behave), but a test can't tap Allow, and granting it
+   from the shell doesn't open storage for a process that's already running there. The test now
+   grants it with `pm grant` (UiAutomation's own method only exists from Android 9), and if storage is
+   still closed it logs that and skips the save check instead of failing.
+
+### Emulator quirks, not app bugs
+
+- Android 7's file picker ignored `adb shell input tap`; keyboard navigation (DPAD, Enter) worked.
+- The Android 10 image's virtual-scene camera never delivers a photo (above). Its AVD now uses the
+  emulated camera; the Android 13 AVD uses emulated front and back cameras from the start.
+- On Android 7 a `pm grant` for storage logs a remount in "default" mode, which is why the save
+  test can't write there (above).
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the

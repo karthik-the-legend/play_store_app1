@@ -2,6 +2,7 @@ package app.formkit.core.imaging.passport
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build
 import app.formkit.core.di.DefaultDispatcher
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.framework.image.ByteBufferExtractor
@@ -36,11 +37,25 @@ class MediaPipePersonSegmenter @Inject constructor(
     private val lock = Mutex()
     private var segmenter: ImageSegmenter? = null
 
+    /**
+     * MediaPipe's native library calls `strtod_l`, which Android only has from 8.0, so on Android 7
+     * loading it takes the whole app down. Any other failure to load it is remembered too, because a
+     * class whose static setup failed can never be used again in this process.
+     */
+    @Volatile
+    private var unavailable = Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+
     override suspend fun segment(image: Bitmap): ForegroundMask = withContext(dispatcher) {
+        if (unavailable) throw SegmentationUnavailableException()
         lock.withLock {
             val input = if (image.config == Bitmap.Config.ARGB_8888) image else image.copy(Bitmap.Config.ARGB_8888, false)
             try {
-                val result = obtainSegmenter().segment(BitmapImageBuilder(input).build())
+                val result = try {
+                    obtainSegmenter().segment(BitmapImageBuilder(input).build())
+                } catch (e: LinkageError) {
+                    unavailable = true
+                    throw SegmentationUnavailableException(e)
+                }
                 val masks = result.confidenceMasks().orElse(null)
                 check(!masks.isNullOrEmpty()) { "The segmenter returned no mask" }
                 try {

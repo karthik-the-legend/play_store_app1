@@ -1,5 +1,6 @@
 package app.formkit
 
+import android.Manifest
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -9,6 +10,8 @@ import android.graphics.Paint
 import android.graphics.RadialGradient
 import android.graphics.Shader
 import android.os.Build
+import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.util.Log
 import androidx.exifinterface.media.ExifInterface
@@ -140,6 +143,24 @@ class ResizePipelineTest {
 
     @Test
     fun theSavedFileOnDiskIsWithinTheLimit() = runBlocking {
+        // Android 9 and older only let the app write to Pictures with the storage permission, which
+        // the app asks for when Save is tapped; here nobody can tap Allow. Granting it from the shell
+        // doesn't always open up storage for a process that's already running (it doesn't on the
+        // Android 7 emulator), so if it's still closed the check stops here. That save path was
+        // checked by hand on Android 7 with the real permission prompt; see DECISIONS.md.
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            val output = InstrumentationRegistry.getInstrumentation().uiAutomation
+                .executeShellCommand("pm grant ${context.packageName} ${Manifest.permission.WRITE_EXTERNAL_STORAGE}")
+            // Reading to the end waits for the command to finish.
+            ParcelFileDescriptor.AutoCloseInputStream(output).use { it.readBytes() }
+            @Suppress("DEPRECATION")
+            val pictures = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            val writable = runCatching { File(pictures, ".formkit-probe").apply { writeText("x") }.delete() }.isSuccess
+            if (!writable) {
+                Log.w("ResizePipelineTest", "Pictures isn't writable from the test process on API ${Build.VERSION.SDK_INT}; skipping the save check")
+                return@runBlocking
+            }
+        }
         val photo = photo(2000, 1500, "camera.jpg")
         val done = processor.resize(photo, SizeTarget(maxBytes = 50_000, allowDownscale = true), File(workDir, "out.jpg")) as ResizeOutcome.Done
         val exporter = FileExporter(context, Dispatchers.IO)

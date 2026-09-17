@@ -26,6 +26,7 @@ import app.formkit.core.imaging.passport.MaskBrush
 import app.formkit.core.imaging.passport.MaskEdits
 import app.formkit.core.imaging.passport.PassportPreset
 import app.formkit.core.imaging.passport.PersonSegmenter
+import app.formkit.core.imaging.passport.SegmentationUnavailableException
 import app.formkit.core.imaging.passport.Placement
 import app.formkit.core.imaging.passport.PrintSheets
 import app.formkit.core.storage.FileExporter
@@ -80,6 +81,8 @@ data class PassportUiState(
     val cutoutVersion: Int = 0,
     val canUndo: Boolean = false,
     val personFound: Boolean = true,
+    /** False on phones that can't run background removal (Android 7). */
+    val removalAvailable: Boolean = true,
     val isPreparing: Boolean = false,
     val isProcessing: Boolean = false,
     val isSaving: Boolean = false,
@@ -134,6 +137,7 @@ class PassportViewModel @Inject constructor(
             cutoutVersion = activity.cutoutVersion,
             canUndo = activity.canUndo,
             personFound = activity.personFound,
+            removalAvailable = activity.removalAvailable,
             isPreparing = activity.isPreparing,
             isProcessing = activity.isProcessing,
             isSaving = activity.isSaving,
@@ -491,14 +495,31 @@ class PassportViewModel @Inject constructor(
         prepareJob?.cancel()
         workJob?.cancel()
         clearImages()
-        activity.update { it.copy(isPreparing = true, cutout = null, canUndo = false, personFound = true, problem = null) }
+        activity.update {
+            it.copy(isPreparing = true, cutout = null, canUndo = false, personFound = true, removalAvailable = true, problem = null)
+        }
         prepareJob = viewModelScope.launch {
             try {
                 val workspace = ensureWorkspace()
                 val working = withContext(defaultDispatcher) { loadWorkingPhoto(file) }
                 val savedMask = if (fresh) null else withContext(ioDispatcher) { readMask(workspace, working) }
-                val base = savedMask ?: segmenter.segment(working).also { segmented ->
-                    withContext(ioDispatcher) { writeMask(workspace, segmented) }
+                var removalAvailable = true
+                var personInMask = true
+                val base = savedMask ?: try {
+                    val segmented = segmenter.segment(working)
+                    if (segmented.coverage() < MIN_PERSON_COVERAGE) {
+                        // Nobody in the photo: keep all of it, or Create photo would hand back a blank
+                        // page. Not saved, so a restore asks the segmenter again and lands here again.
+                        personInMask = false
+                        ForegroundMask.solid(working.width, working.height)
+                    } else {
+                        segmented.also { withContext(ioDispatcher) { writeMask(workspace, it) } }
+                    }
+                } catch (_: SegmentationUnavailableException) {
+                    // The whole photo is kept, and Touch up can still erase the background by hand.
+                    // Nothing is saved, so a restore asks the segmenter again and lands here again.
+                    removalAvailable = false
+                    ForegroundMask.solid(working.width, working.height)
                 }
                 val restoredEdits = if (fresh) {
                     withContext(ioDispatcher) { File(workspace, EDITS_FILE).delete() }
@@ -508,7 +529,8 @@ class PassportViewModel @Inject constructor(
                 }
                 val current = withContext(defaultDispatcher) { restoredEdits.applyTo(base) }
                 val newCutout = withContext(defaultDispatcher) { renderer.cutout(working, current) }
-                val head = withContext(defaultDispatcher) { HeadFraming.measureHead(current) }
+                // A solid mask has no head to find, so framing starts from the whole photo instead.
+                val head = if (removalAvailable && personInMask) withContext(defaultDispatcher) { HeadFraming.measureHead(current) } else null
 
                 photo = working
                 baseMask = base
@@ -524,7 +546,14 @@ class PassportViewModel @Inject constructor(
                     updateSession { it.copy(placement = placement) }
                 }
                 activity.update {
-                    it.copy(cutout = newCutout, cutoutVersion = it.cutoutVersion + 1, canUndo = restoredEdits.canUndo, personFound = head != null)
+                    it.copy(
+                        cutout = newCutout,
+                        cutoutVersion = it.cutoutVersion + 1,
+                        canUndo = restoredEdits.canUndo,
+                        // Without background removal "no person found" would be wrong, so that message waits.
+                        personFound = head != null || !removalAvailable,
+                        removalAvailable = removalAvailable,
+                    )
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -682,6 +711,7 @@ class PassportViewModel @Inject constructor(
         val cutoutVersion: Int = 0,
         val canUndo: Boolean = false,
         val personFound: Boolean = true,
+        val removalAvailable: Boolean = true,
         val isPreparing: Boolean = false,
         val isProcessing: Boolean = false,
         val isSaving: Boolean = false,
@@ -697,6 +727,9 @@ class PassportViewModel @Inject constructor(
         const val EDITS_FILE = "edits.json"
         const val CAMERA_PHOTO_NAME = "camera.jpg"
         const val WORKING_LONG_EDGE = 1600
+
+        /** Less of the photo than this marked as person means the segmenter found nobody. */
+        const val MIN_PERSON_COVERAGE = 0.01f
         const val SHEET_JPEG_QUALITY = 95
         val json = Json { ignoreUnknownKeys = true }
     }

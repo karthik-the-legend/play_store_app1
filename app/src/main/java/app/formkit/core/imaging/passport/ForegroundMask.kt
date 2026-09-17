@@ -17,7 +17,13 @@ class ForegroundMask(val width: Int, val height: Int, val alpha: ByteArray) {
 
     fun copy() = ForegroundMask(width, height, alpha.copyOf())
 
+    /** The share of pixels that are mostly person, from 0 to 1. */
+    fun coverage(): Float = alpha.count { (it.toInt() and 0xFF) >= 128 }.toFloat() / alpha.size
+
     companion object {
+        /** Everything counts as the person: the photo is kept whole. */
+        fun solid(width: Int, height: Int): ForegroundMask = ForegroundMask(width, height, ByteArray(width * height) { 0xFF.toByte() })
+
         /**
          * Turns a segmentation model's per-pixel confidence (0–1) into a mask. A smoothstep between
          * [low] and [high] sharpens the soft, blurry edge the model produces without making it jagged.
