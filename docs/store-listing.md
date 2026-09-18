@@ -29,51 +29,46 @@ Resize photos to an exact KB, make passport photos and PDFs. Works offline.
 
 ## Full description (4000 characters max)
 
+Paste this into Play as it stands: each paragraph is one line, because Play keeps the line breaks
+it is given and a wrapped paragraph would show up broken in the listing.
+
 ```
-FormKit gets your documents ready for online forms — exam applications, job portals, government
-sites — without uploading anything. Every tool runs on your phone, so your photos and papers stay
-yours.
+FormKit gets your documents ready for online forms — exam applications, job portals, government sites — without uploading anything. Every tool runs on your phone, so your photos and papers stay yours.
 
 RESIZE A PHOTO TO AN EXACT KB SIZE
-Forms ask for "photo under 50 KB" or "signature between 10 KB and 20 KB". Type the limit and FormKit
-lands just under it, first time. Set exact pixel dimensions too, like 200x230, when the form insists.
+Forms ask for "photo under 50 KB" or "signature between 10 KB and 20 KB". Type the limit and FormKit lands just under it, first time. Set exact pixel dimensions too, like 200x230, when the form insists.
 
 PASSPORT SIZE PHOTO MAKER
-Turn any photo into a passport or stamp size photo with a clean white, blue or grey background,
-removed on your phone. Standard sizes are built in, including 35x45 mm, 2x2 inch and Indian exam
-sizes. Print sheets put several copies on 4x6 paper at 300 DPI.
+Turn any photo into a passport or stamp size photo with a clean white, blue or grey background, removed on your phone. Standard sizes are built in, including 35x45 mm, 2x2 inch and Indian exam sizes. Print sheets put several copies on 4x6 paper at 300 DPI.
 
 SIGNATURE CLEANUP
-Photograph your signature on paper and FormKit lifts it off the page: no shadows, no ruled lines, no
-grey background. Save it with a white or transparent background, at the KB size the form wants. You
-can also sign with your finger.
+Photograph your signature on paper and FormKit lifts it off the page: no shadows, no ruled lines, no grey background. Save it with a white or transparent background, at the KB size the form wants. You can also sign with your finger.
 
 SCAN TO PDF
-Photograph each page and FormKit finds its edges, straightens it and cleans it up, then makes a
-multi-page PDF that fits an upload limit. Original, greyscale, black & white and enhanced looks.
+Photograph each page and FormKit finds its edges, straightens it and cleans it up, then makes a multi-page PDF that fits an upload limit. Original, greyscale, black & white and enhanced looks.
 
 PDF TOOLS
-- Compress a PDF to a target KB size
-- Images to PDF, with page size and margins
-- Merge PDFs in any order
-- Split a PDF by page range, or pull out single pages
-- PDF to images (JPEG or PNG) at the DPI you choose
-- Password-protected PDFs open once you type the password
+• Compress a PDF to a target KB size
+• Images to PDF, with page size and margins
+• Merge PDFs in any order
+• Split a PDF by page range, or pull out single pages
+• PDF to images (JPEG or PNG) at the DPI you choose
+• Password-protected PDFs open once you type the password
 
 WHY FORMKIT
-- Works offline. Airplane mode changes nothing.
-- No account, no sign-in, no cloud storage.
-- Your files are never uploaded — there is no server to upload them to.
-- Small download, no clutter, no watermark on anything except multi-photo print sheets.
-- Dark mode, large-text support and TalkBack labels throughout.
+• Works offline. Airplane mode changes nothing.
+• No account, no sign-in, no cloud storage.
+• Your files are never uploaded — there is no server to upload them to.
+• No clutter, and no watermark on anything except multi-photo print sheets.
+• Dark mode, large-text support and TalkBack labels throughout.
 
 FORMKIT PRO
-One payment, no subscription. Pro removes every ad and the print sheet watermark, for good. The free
-version shows ads between operations; it never covers or interrupts a tool.
-
-Useful for: photo resize, resize image in kb, passport size photo maker, signature resize, compress
-pdf, jpg to pdf, pdf to jpg, merge pdf, split pdf, document scanner.
+One payment, no subscription. Pro removes every ad and the print sheet watermark, for good. The free version shows ads between operations; it never covers or interrupts a tool.
 ```
+
+Two lines that were here are gone. "Small download" wasn't true of a 12 MB download, and a closing
+"Useful for: photo resize, resize image in kb, …" list of search terms is keyword stuffing, which
+Play's metadata policy rejects listings for. The words still earn their place in the sentences above.
 
 ## Graphics
 

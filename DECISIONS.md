@@ -659,6 +659,28 @@ the framing by hand.
 writes the mask and the framed photo, for the app and for the variants, to the app's files folder;
 the class comment has the command.
 
+## First release on Google Play (2026-09-18)
+
+Version 1.0.0 (version code 1) is live on the **internal testing** track, installed from Play on a
+real phone and walked through: every tool, a real Pro purchase, and Pro surviving a restart.
+
+**Ads.** The four real AdMob IDs live in the owner's `gradle-home/gradle.properties`, never here.
+The bundle was checked before upload: the manifest carries the real app ID, the three ad units in
+the dex are the real ones, Google's test IDs appear nowhere, and it is signed with the upload key.
+AdMob's consent message (GDPR/EEA) is published, with "Do not consent" shown, so European users can
+refuse personalised ads; refusing loses the ads, not the app. AdMob won't review the app until the
+payment profile is complete, which is the owner's to finish.
+
+**Store title** is `Photo Resize in KB & PDF`, not the brand name: people search for what an app
+does. The name is in the short description, the icon and the app itself.
+
+**Listing text** in `docs/store-listing.md` is paste-ready, one line per paragraph. Play keeps the
+line breaks it is given, so a hard-wrapped paragraph shows up broken in the listing.
+
+**Still ahead:** a closed test with at least 12 testers who stay opted in for 14 days, which a
+personal developer account needs before it can apply for production access. That clock is the
+longest part of the launch, so it starts before anything else.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the
