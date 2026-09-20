@@ -95,3 +95,9 @@ indigo and white.
 | 8 | Settings | "No account. No uploads." | The privacy row, theme choice and the Pro card. |
 
 Captured versions of all eight are in `docs/screenshots/`.
+
+The face in screenshot 4 is "Smiling in a cornfield" by Allef Vinicius, from Unsplash by way of
+Wikimedia Commons, under CC0: no copyright, and no named person whose likeness the listing would be
+trading on. Any replacement needs both of those, not only a free licence — a store listing is
+advertising, which is where a photo of a recognisable person causes trouble even when the photograph
+itself is free to use.
