@@ -44,6 +44,10 @@ android {
         versionCode = 3
         versionName = "1.0.2"
 
+        // Off for the launch: print sheets carry no watermark for anyone, so there's nothing for the
+        // rewarded ad or Pro to remove. True brings back the free version's margin note.
+        buildConfigField("boolean", "SHEET_WATERMARK", "false")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

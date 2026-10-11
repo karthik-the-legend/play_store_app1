@@ -222,7 +222,7 @@ private fun ProCard() {
             if (pro.isPro) {
                 Text(stringResource(R.string.settings_pro_active_title), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    stringResource(R.string.settings_pro_active_body),
+                    stringResource(if (BuildConfig.SHEET_WATERMARK) R.string.settings_pro_active_body else R.string.settings_pro_active_body_ads),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
@@ -230,8 +230,11 @@ private fun ProCard() {
             }
             Text(stringResource(R.string.settings_pro_title), style = MaterialTheme.typography.titleMedium)
             val price = pro.price
+            // Only promise to remove the sheet watermark while there is one.
+            val body = if (BuildConfig.SHEET_WATERMARK) R.string.settings_pro_body else R.string.settings_pro_body_ads
+            val bodyNoPrice = if (BuildConfig.SHEET_WATERMARK) R.string.settings_pro_body_no_price else R.string.settings_pro_body_ads_no_price
             Text(
-                if (price != null) stringResource(R.string.settings_pro_body, price) else stringResource(R.string.settings_pro_body_no_price),
+                if (price != null) stringResource(body, price) else stringResource(bodyNoPrice),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )

@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.formkit.BuildConfig
 import app.formkit.R
 import app.formkit.core.imaging.OptionsError
 import app.formkit.core.imaging.OptionsValidation
@@ -103,11 +104,11 @@ fun PassportRoute(
     val saveSheet = rememberStorageAwareSave(snackbarHostState, viewModel::saveSheet)
     val watermark = stringResource(R.string.passport_watermark)
 
-    // Pro, or a rewarded ad watched this session, removes the print sheet watermark.
+    // With the sheet watermark on, Pro or a rewarded ad watched this session removes it.
     val monetization = rememberMonetization()
     val pro by monetization.proManager().state.collectAsStateWithLifecycle()
     val rewardedWatermarkFree by monetization.sessionPerks().watermarkFreeSheets.collectAsStateWithLifecycle()
-    val watermarkFree = pro.isPro || rewardedWatermarkFree
+    val watermarkFree = !BuildConfig.SHEET_WATERMARK || pro.isPro || rewardedWatermarkFree
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
     var loadingAd by remember { mutableStateOf(false) }

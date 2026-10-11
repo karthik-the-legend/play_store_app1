@@ -681,6 +681,24 @@ line breaks it is given, so a hard-wrapped paragraph shows up broken in the list
 personal developer account needs before it can apply for production access. That clock is the
 longest part of the launch, so it starts before anything else.
 
+The closed test ran its 14 days and production access was applied for on 2026-10-04.
+
+## No watermark at launch (2026-10-11)
+
+The owner's call: at first, everything people make downloads clean. The only watermark FormKit
+ever had was the "Made with FormKit" note in a print sheet's margin, for free users; single
+passport photos, resized photos, signatures and PDFs never carried one.
+
+`BuildConfig.SHEET_WATERMARK` (set in `app/build.gradle.kts`) is now false. With it off, every
+sheet is treated as watermark-free, so the "watch an ad to remove it" card never appears and the
+rewarded ad goes unused. Pro is pitched as removing ads only, since promising to remove a watermark
+nobody sees would be selling nothing; the Settings card picks its wording from the same flag, and
+the store listing says "no watermark on anything you make".
+
+Checked as a free user on the emulator: the sheet screen says "No watermark on this sheet", and the
+saved 4-photo sheet's bottom margin is pure white. Turning the watermark back on later is the one
+flag plus the listing text, and it should come with a version whose release notes say so.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the

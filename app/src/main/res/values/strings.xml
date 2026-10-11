@@ -474,10 +474,13 @@
     <string name="settings_pro_title">Remove ads with a one-time purchase</string>
     <string name="settings_pro_body">One payment of %1$s removes all ads and the print sheet watermark, for good. No subscription.</string>
     <string name="settings_pro_body_no_price">One payment removes all ads and the print sheet watermark, for good. No subscription.</string>
+    <string name="settings_pro_body_ads">One payment of %1$s removes all ads, for good. No subscription.</string>
+    <string name="settings_pro_body_ads_no_price">One payment removes all ads, for good. No subscription.</string>
     <string name="settings_pro_buy">Get Pro</string>
     <string name="settings_pro_restore">Restore purchase</string>
     <string name="settings_pro_active_title">FormKit Pro is active</string>
     <string name="settings_pro_active_body">Thank you for supporting FormKit. Ads and the print sheet watermark are gone.</string>
+    <string name="settings_pro_active_body_ads">Thank you for supporting FormKit. Ads are gone.</string>
     <string name="settings_pro_pending">Your payment is still being processed. Pro unlocks as soon as it clears.</string>
     <string name="settings_ad_privacy">Ad privacy choices</string>
     <string name="settings_ad_privacy_value">Change how ads use your data</string>

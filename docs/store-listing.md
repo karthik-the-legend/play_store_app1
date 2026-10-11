@@ -59,11 +59,11 @@ WHY FORMKIT
 • Works offline. Airplane mode changes nothing.
 • No account, no sign-in, no cloud storage.
 • Your files are never uploaded — there is no server to upload them to.
-• No clutter, and no watermark on anything except multi-photo print sheets.
+• No watermark on anything you make, print sheets included.
 • Dark mode, large-text support and TalkBack labels throughout.
 
 FORMKIT PRO
-One payment, no subscription. Pro removes every ad and the print sheet watermark, for good. The free version shows ads between operations; it never covers or interrupts a tool.
+One payment, no subscription. Pro removes every ad, for good. The free version shows ads between operations; it never covers or interrupts a tool.
 ```
 
 Two lines that were here are gone. "Small download" wasn't true of a 12 MB download, and a closing
