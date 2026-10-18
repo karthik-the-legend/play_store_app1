@@ -354,8 +354,10 @@
     <string name="compress_pick">Choose PDF</string>
     <string name="compress_section_limit">Size limit</string>
     <string name="compress_limit_current">This PDF is %1$s now.</string>
-    <string name="compress_notice_title">Text won\'t be selectable</string>
-    <string name="compress_notice_body">To reach a size limit, each page becomes an image. The PDF looks the same, but you can\'t copy or search its text. Keep the original if you need that.</string>
+    <string name="compress_notice_title">Text stays sharp</string>
+    <string name="compress_notice_body">FormKit shrinks the photos inside your PDF and leaves its text exactly as it is, so it stays crisp, selectable and searchable. Only if that can\'t reach your limit do pages become images.</string>
+    <string name="compress_result_images_title">Pages became images</string>
+    <string name="compress_result_images_body">This limit could only be reached by turning each page into an image. It looks the same, but its text can\'t be copied or searched. Keep the original if you need that.</string>
     <string name="compress_action">Compress PDF</string>
     <string name="compress_processing">Compressing your PDF…</string>
     <string name="compress_result_title">PDF compressed</string>

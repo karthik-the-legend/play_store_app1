@@ -17,6 +17,7 @@ import app.formkit.core.imaging.scan.ScanFilter
 import app.formkit.core.pdf.CompressOutcome
 import app.formkit.core.pdf.PaperSize
 import app.formkit.core.pdf.PdfCompressor
+import app.formkit.core.pdf.PdfImageCompressor
 import app.formkit.core.pdf.PdfDocuments
 import app.formkit.core.pdf.PdfRasterizer
 import app.formkit.feature.scan.ScanPage
@@ -44,7 +45,7 @@ class ScanPipelineTest {
     private val codec = AndroidImageCodec()
     private val processor = ScanPageProcessor(decoder, codec, Dispatchers.Default)
     private val documents = PdfDocuments(context, Dispatchers.IO)
-    private val compressor = PdfCompressor(documents, codec, Dispatchers.Default)
+    private val compressor = PdfCompressor(documents, codec, PdfImageCompressor(documents, codec, Dispatchers.Default), Dispatchers.Default)
     private val writer = ScanPdfWriter(processor, decoder, codec, compressor, documents, Dispatchers.IO)
     private lateinit var dir: File
 

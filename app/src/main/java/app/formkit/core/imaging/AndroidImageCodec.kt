@@ -22,22 +22,64 @@ class AndroidImageCodec @Inject constructor() : ImageCodec<Bitmap> {
         return output.toByteArray()
     }
 
+    override fun scale(image: Bitmap, size: PixelSize): Bitmap = scale(image, size, sharpen = false)
+
     /**
-     * Halves repeatedly before the final resize. A single bilinear pass from a much larger image
-     * samples too few source pixels, which makes fine detail like hair and text shimmer.
+     * Halves natively while the image is at least twice the size (an exact 2×2 average, and fast),
+     * then makes the last, uneven step with [Resampler], which keeps far more detail than Android's
+     * bilinear scaling. With [sharpen], a shrunk opaque photo also gets a light unsharp mask.
      */
-    override fun scale(image: Bitmap, size: PixelSize): Bitmap {
+    fun scale(image: Bitmap, size: PixelSize, sharpen: Boolean): Bitmap {
+        val reduction = image.width.toDouble() / size.width
         var current = image
         while (current.width / 2 >= size.width && current.height / 2 >= size.height) {
             val half = Bitmap.createScaledBitmap(current, current.width / 2, current.height / 2, true)
             if (current !== image) current.recycle()
             current = half
         }
-        if (current.width == size.width && current.height == size.height) {
-            return if (current === image) image.copy(image.config ?: Bitmap.Config.ARGB_8888, false) else current
+        var result = if (current.width == size.width && current.height == size.height) {
+            if (current === image) image.copy(Bitmap.Config.ARGB_8888, true) else current
+        } else {
+            resample(current, size).also { if (current !== image) current.recycle() }
         }
-        val result = Bitmap.createScaledBitmap(current, size.width, size.height, true)
-        if (current !== image && current !== result) current.recycle()
+        if (sharpen && reduction >= SHARPEN_FROM_REDUCTION && !result.hasAlpha()) {
+            // Halving alone can land on the size, and Android's scaled bitmaps are read-only.
+            if (!result.isMutable) result = result.copy(Bitmap.Config.ARGB_8888, true).also { result.recycle() }
+            sharpenInPlace(result)
+        }
+        return result
+    }
+
+    /** This codec, but photos it shrinks come out lightly sharpened: for photos, not signatures or text. */
+    val forPhotos: ImageCodec<Bitmap> = object : ImageCodec<Bitmap> by this {
+        override fun scale(image: Bitmap, size: PixelSize): Bitmap = scale(image, size, sharpen = true)
+    }
+
+    /** Light unsharp mask on an opaque, mutable bitmap (see [Resampler.sharpen]). */
+    fun sharpenInPlace(bitmap: Bitmap) {
+        val width = bitmap.width
+        Resampler.sharpen(
+            width,
+            bitmap.height,
+            source = { y, into -> bitmap.getPixels(into, 0, width, 0, y, width, 1) },
+            sink = { y, row -> bitmap.setPixels(row, 0, width, 0, y, width, 1) },
+        )
+    }
+
+    private fun resample(source: Bitmap, size: PixelSize): Bitmap {
+        val result = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
+        val sourceWidth = source.width
+        val hasAlpha = source.hasAlpha()
+        Resampler.resize(
+            sourceWidth,
+            source.height,
+            size.width,
+            size.height,
+            hasAlpha,
+            source = { y, into -> source.getPixels(into, 0, sourceWidth, 0, y, sourceWidth, 1) },
+            sink = { y, row -> result.setPixels(row, 0, size.width, 0, y, size.width, 1) },
+        )
+        result.setHasAlpha(hasAlpha)
         return result
     }
 
@@ -45,6 +87,9 @@ class AndroidImageCodec @Inject constructor() : ImageCodec<Bitmap> {
 
     private companion object {
         const val INITIAL_BUFFER_BYTES = 64 * 1024
+
+        /** Sharpening only helps once shrinking has softened the photo; a light trim needs none. */
+        const val SHARPEN_FROM_REDUCTION = 1.25
     }
 }
 

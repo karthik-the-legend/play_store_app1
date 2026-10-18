@@ -42,6 +42,8 @@ data class CompressResult(
     val pageCount: Int,
     val maxBytes: Long,
     val saved: SavedFile? = null,
+    /** False when pages had to become images to fit, so the text can't be copied any more. */
+    val keptText: Boolean = false,
 )
 
 @Serializable
@@ -96,13 +98,14 @@ class CompressPdfViewModel @Inject constructor(
             val pagesDir = File(workspace, "pages")
             try {
                 val readableBytes = withContext(deps.ioDispatcher) { readable.length() }
-                val sizeBytes = if (readableBytes <= maxBytes) {
+                val done = if (readableBytes <= maxBytes) {
                     // A protected PDF that already fits only needs its password taken off:
                     // upload portals usually refuse protected files.
-                    withContext(deps.ioDispatcher) { readable.copyTo(output, overwrite = true).length() }
+                    val copied = withContext(deps.ioDispatcher) { readable.copyTo(output, overwrite = true).length() }
+                    CompressOutcome.Done(copied, pdf.pageCount, keptText = true)
                 } else {
                     when (val outcome = compressor.compress(readable, maxBytes, pagesDir, output, ::report)) {
-                        is CompressOutcome.Done -> outcome.sizeBytes
+                        is CompressOutcome.Done -> outcome
                         is CompressOutcome.TooLarge -> {
                             showProblem(PdfProblem.TooLarge(outcome.smallestBytes, maxBytes))
                             return@runWork
@@ -111,7 +114,7 @@ class CompressPdfViewModel @Inject constructor(
                 }
                 previous?.let { path -> withContext(deps.ioDispatcher) { File(path).delete() } }
                 updateSession {
-                    it.copy(result = CompressResult(output.path, sizeBytes, pdf.sizeBytes, pdf.pageCount, maxBytes))
+                    it.copy(result = CompressResult(output.path, done.sizeBytes, pdf.sizeBytes, pdf.pageCount, maxBytes, keptText = done.keptText))
                 }
             } finally {
                 withContext(NonCancellable + deps.ioDispatcher) { pagesDir.deleteRecursively() }
@@ -143,6 +146,7 @@ class CompressPdfViewModel @Inject constructor(
     private fun report(progress: CompressProgress) {
         val stage = when (progress.stage) {
             CompressProgress.Stage.Analysing -> ProgressStage.Analysing
+            CompressProgress.Stage.Photos -> ProgressStage.Photos
             CompressProgress.Stage.Compressing -> ProgressStage.Pages
             CompressProgress.Stage.Writing -> ProgressStage.Writing
         }

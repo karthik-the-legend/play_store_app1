@@ -78,6 +78,7 @@ class ScanPdfWriter @Inject constructor(
         return compressor.fit(PreparedPages(prepared, paper), maxBytes, File(workDir, "fitted"), output) { progress ->
             val stage = when (progress.stage) {
                 CompressProgress.Stage.Analysing -> ProgressStage.Analysing
+                CompressProgress.Stage.Photos -> ProgressStage.Photos
                 CompressProgress.Stage.Compressing -> ProgressStage.Pages
                 CompressProgress.Stage.Writing -> ProgressStage.Writing
             }

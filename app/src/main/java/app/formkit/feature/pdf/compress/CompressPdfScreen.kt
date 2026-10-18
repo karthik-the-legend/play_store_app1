@@ -228,5 +228,8 @@ private fun CompressResultScreen(
         badge = stringResource(R.string.resize_result_under_limit, formatSize(result.maxBytes)),
     ) {
         PdfPreviewCard(result.path)
+        if (!result.keptText) {
+            NoticeCard(stringResource(R.string.compress_result_images_title), stringResource(R.string.compress_result_images_body))
+        }
     }
 }

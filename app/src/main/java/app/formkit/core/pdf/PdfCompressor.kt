@@ -16,14 +16,15 @@ import javax.inject.Inject
 import kotlin.math.max
 
 sealed interface CompressOutcome {
-    data class Done(val sizeBytes: Long, val pageCount: Int) : CompressOutcome
+    /** [keptText]: only photos were recompressed, so text is as sharp, selectable and searchable as before. */
+    data class Done(val sizeBytes: Long, val pageCount: Int, val keptText: Boolean = false) : CompressOutcome
 
     /** Even the smallest pages can't fit. [smallestBytes] is roughly the smallest PDF possible. */
     data class TooLarge(val smallestBytes: Long) : CompressOutcome
 }
 
 data class CompressProgress(val stage: Stage, val page: Int, val pageCount: Int) {
-    enum class Stage { Analysing, Compressing, Writing }
+    enum class Stage { Analysing, Photos, Compressing, Writing }
 }
 
 /** Pages to fit under a byte limit: where each goes, and a way to draw it at up to a given size. */
@@ -37,9 +38,12 @@ interface PageImages {
 }
 
 /**
- * Makes a PDF of page images no bigger than a byte limit, using §4.1's search on every page. Compress
- * PDF feeds it the pages of an existing PDF (so text stops being selectable, which the tool warns
- * about); Scan to PDF feeds it straightened photos.
+ * Fits a PDF under a byte limit. [compress] first tries [PdfImageCompressor], which recompresses
+ * only the photos and keeps text sharp and selectable. Only when that can't reach the limit are the
+ * pages turned into images, the fallback described below; Scan to PDF uses that directly, through
+ * [fit], for its straightened photos.
+ *
+ * Making a PDF of page images no bigger than a byte limit uses §4.1's search on every page:
  *
  * 1. A quick pass renders a small preview of every page. Its JPEG size is the page's weight (busy
  *    pages get more bytes), and a tiny low-quality encode estimates the page's floor.
@@ -52,6 +56,7 @@ interface PageImages {
 class PdfCompressor @Inject constructor(
     private val documents: PdfDocuments,
     private val codec: AndroidImageCodec,
+    private val photos: PdfImageCompressor,
     @DefaultDispatcher private val dispatcher: CoroutineDispatcher,
 ) {
 
@@ -62,6 +67,9 @@ class PdfCompressor @Inject constructor(
         output: File,
         onProgress: (CompressProgress) -> Unit = {},
     ): CompressOutcome = withContext(dispatcher) {
+        photos.compress(source, maxBytes, File(workDir, "photos"), output) { done, total ->
+            onProgress(CompressProgress(CompressProgress.Stage.Photos, done, total))
+        }?.let { return@withContext it }
         PdfRasterizer(source).use { raster -> fit(RasterPages(raster), maxBytes, workDir, output, onProgress) }
     }
 

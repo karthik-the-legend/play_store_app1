@@ -41,8 +41,8 @@ android {
         applicationId = "app.formkit"
         minSdk = 24
         targetSdk = 37
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.0.3"
 
         // Off for the launch: print sheets carry no watermark for anyone, so there's nothing for the
         // rewarded ad or Pro to remove. True brings back the free version's margin note.

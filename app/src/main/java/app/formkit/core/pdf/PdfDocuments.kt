@@ -78,6 +78,12 @@ class PdfDocuments @Inject constructor(
         }
     }
 
+    /** Opens an unprotected [file] for [block] to change and save wherever it likes. */
+    suspend fun <R> edit(file: File, block: suspend (PDDocument) -> R): R = withContext(ioDispatcher) {
+        ensureResourceLoader()
+        PDDocument.load(file, "", memorySetting()).use { block(it) }
+    }
+
     /** Joins [sources] (unprotected files) into [output], in order. */
     suspend fun merge(sources: List<File>, output: File) = withContext(ioDispatcher) {
         require(sources.size >= 2) { "Merging needs at least two documents" }

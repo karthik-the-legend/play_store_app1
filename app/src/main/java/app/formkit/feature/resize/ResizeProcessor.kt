@@ -61,7 +61,8 @@ class ResizeProcessor @Inject constructor(
                 working = flattenOntoWhite(working).also { bitmaps += it }
             }
 
-            when (val outcome = SizeTargeter(codec).fit(working, target, onProgress)) {
+            // Photos come out of the shrink lightly sharpened, the way a sharp original looked.
+            when (val outcome = SizeTargeter(codec.forPhotos).fit(working, target, onProgress)) {
                 is TargetOutcome.Fitted -> {
                     output.parentFile?.mkdirs()
                     output.writeBytes(outcome.bytes)

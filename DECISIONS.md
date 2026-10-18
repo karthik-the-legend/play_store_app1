@@ -699,6 +699,86 @@ Checked as a free user on the emulator: the sheet screen says "No watermark on t
 saved 4-photo sheet's bottom margin is pure white. Turning the watermark back on later is the one
 flag plus the listing text, and it should come with a version whose release notes say so.
 
+## Clarity after shrinking (2026-10-18)
+
+The owner found photos and PDFs losing clarity once shrunk. Each suspect was measured before
+anything changed, with SSIM (1.0 = identical) on a CC0 portrait, against an uncompressed Lanczos
+downscale, using libjpeg-turbo, which is what Android's encoder is built on.
+
+**The JPEG encoder isn't the problem.** At the same size and byte limit, optimised Huffman tables,
+progressive encoding, 4:4:4 chroma and mozjpeg's quantisation tables moved SSIM by at most 0.002,
+invisible, and not worth shipping an encoder of our own.
+
+**The size the targeter picks is right.** For 20, 50 and 100 KB, every candidate size was tried and
+viewed at a phone's full width. The targeter's choice landed within 0.004 of the best, at quality
+70 to 80 each time, which is where the best always was.
+
+**The scaling was costing detail.** Android's `createScaledBitmap` is bilinear: four source pixels
+per output pixel, so the last uneven step after halving both blurs and aliases. At the same size
+and quality (902 × 601, quality 80, 50 KB), viewed at phone width:
+
+| Shrink | SSIM vs ideal at that size | SSIM at phone width |
+|---|---|---|
+| Halving + bilinear (before) | 0.9867 | 0.9511 |
+| Halving + Lanczos-3 (now) | 0.9931 | 0.9526 |
+| Lanczos-3 + light unsharp mask (photos now) | — | 0.9533 |
+
+Side by side, bilinear smears eyelashes and fine hair; Lanczos keeps them. `Resampler` does the last
+step: Lanczos-3 widened by the reduction when shrinking, Catmull-Rom when enlarging, premultiplied
+so a cut-out's edge never picks up colour hidden under transparent pixels, and a few rows at a time
+so memory doesn't grow with the photo. Halving stays native, since an exact 2× bilinear step is
+already a 2 × 2 average and fast.
+
+**Sharpening, for photos only.** Shrinking softens edges, and photo editors' "sharpen for screen"
+export puts it back. An unsharp mask of σ 0.6 px, amount 0.4 and threshold 2 left SSIM level or
+slightly better, and looks crisper. Stronger (σ 1.0, amount 0.6) turned skin grainy, so this is the
+light setting. It applies to Resize (`AndroidImageCodec.forPhotos`) and passport photos, when the
+photo shrinks by at least 1.25×. Signatures, pages and PDFs aren't sharpened: their edges are text.
+
+**The passport renderer** used to halve and then draw through a bilinear matrix. It now resizes once
+with the resampler and places the result on whole pixels, so nothing filters it twice. It only
+resizes the part the frame shows, since a deep zoom of the whole cut-out wouldn't fit in memory.
+
+**Compress PDF turned every page into a JPEG**, text included. That's where blurred text came from:
+at 150 KB for a page of text and a photo, the text was a picture of text. `PdfImageCompressor` now
+does what desktop compressors do: it leaves text, lines and drawings exactly as they are and
+recompresses only the photos, each cut to the pixels it needs for the size it's shown on the page.
+A binary search over twelve levels (220 DPI at quality 85 down to 50 DPI at quality 30) finds the
+gentlest that fits. Text stays sharp at any zoom, selectable and searchable. Only when the photos
+can't get the PDF under the limit (the size is in fonts or drawings, or the photos can't be touched)
+do pages become images as before, and then the result says so; the notice before compressing no
+longer warns about text, since that's now the exception.
+
+Photos left alone: under 8 KB, with colour-key masks, one-bit or stencil, fax, JBIG2 or JPEG 2000,
+and anything not grey or RGB. That last one matters: PdfBox's Android port doesn't fail on CMYK,
+palettes or spot colours, it reads them as RGB, which would quietly ruin the photo. The check reads
+the PDF's own `/ColorSpace` entry for that reason, and an RGB photo with an ICC profile keeps it.
+
+**PdfBox's Android image reader isn't used for this.** On the emulator, asking it for a smaller
+decode threw ("y + height must be <= bitmap.height()") for every colour JPEG, and grey photos came
+back blank white. So `PdfImageCompressor` decodes photos itself: a JPEG goes straight to Android's
+`BitmapFactory` (with `inSampleSize`), and anything else is unpacked by PdfBox's filters (deflate and
+the like) and block-averaged a row at a time. Only 8-bit grey and RGB are read that way; a `Decode`
+array or colour-key mask leaves the photo alone. A photo with a soft mask is recompressed and the
+mask kept beside it, untouched.
+
+**Checked on the device** (Android 17 emulator, Android's own encoder):
+
+| | Before | Now |
+|---|---|---|
+| Photo, 20 KB, SSIM at phone width | 0.9283 | 0.9309 |
+| Photo, 50 KB | 0.9507 | 0.9530 |
+| Photo, 100 KB | 0.9629 | 0.9647 |
+| A4 letter with a photo (484 KB) under 150 KB | pages turned into images, 144 KB | text kept, 110 KB |
+
+At the same limit the page-image version blurs small print ("0O8B", "l1I"); with text kept it's
+as sharp as the original. Resizing is slower (about 0.5 s instead of 0.06 s for an 18 MP photo at
+50 KB), which nobody waits on. In the release build, Compress PDF took the test letter from 484 KB
+to 66 KB under a 100 KB limit with its text intact, and Resize and Passport worked with no crashes.
+
+`ClarityCheck` (androidTest) repeats the comparison: given a photo on the device it writes before
+and after files for scoring; the class comment has the command.
+
 ## Size log
 
 Measured with `bundletool get-size total` on the R8-minified release bundle. This is the

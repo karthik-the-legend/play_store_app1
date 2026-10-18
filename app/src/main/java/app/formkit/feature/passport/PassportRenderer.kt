@@ -16,6 +16,8 @@ import app.formkit.core.imaging.passport.Placement
 import app.formkit.core.imaging.passport.SheetLayout
 import java.io.File
 import javax.inject.Inject
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -80,33 +82,40 @@ class PassportRenderer @Inject constructor(
     /** The finished photo: the background colour with the cut-out person placed on it. */
     fun render(cutout: Bitmap, placement: Placement, frame: PixelSize, background: Int): Bitmap {
         val scale = placement.scaleFor(frame)
-        // Halve first when the photo is far bigger than the frame: one bilinear pass over a big
-        // reduction skips pixels and makes hair and edges shimmer.
-        var reduction = 1
-        while (scale * reduction * 2 <= 1f && cutout.width / (reduction * 2) >= 1 && cutout.height / (reduction * 2) >= 1) {
-            reduction *= 2
-        }
-        val prepared = if (reduction == 1) {
-            cutout
-        } else {
-            codec.scale(cutout, PixelSize(max(1, cutout.width / reduction), max(1, cutout.height / reduction)))
-        }
-        try {
-            val output = Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
-            val matrix = Matrix().apply {
-                setScale(cutout.width.toFloat() / prepared.width, cutout.height.toFloat() / prepared.height)
-                postTranslate(-placement.centerX, -placement.centerY)
-                postScale(scale, scale)
-                postTranslate(frame.width / 2f, frame.height / 2f)
+        val output = Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        canvas.drawColor(background)
+
+        // Only the part of the photo the frame shows, plus enough around it for the filter, gets
+        // scaled: zoomed in a long way, the whole photo at that scale wouldn't fit in memory.
+        val reduction = 1f / scale
+        val margin = ceil(FILTER_REACH * max(1f, reduction)).toInt() + 2
+        val (visibleLeft, visibleTop) = placement.toSource(0f, 0f, frame)
+        val (visibleRight, visibleBottom) = placement.toSource(frame.width.toFloat(), frame.height.toFloat(), frame)
+        val left = max(0, floor(visibleLeft).toInt() - margin)
+        val top = max(0, floor(visibleTop).toInt() - margin)
+        val right = min(cutout.width, ceil(visibleRight).toInt() + margin)
+        val bottom = min(cutout.height, ceil(visibleBottom).toInt() + margin)
+        if (right > left && bottom > top) {
+            val region = if (left == 0 && top == 0 && right == cutout.width && bottom == cutout.height) {
+                cutout
+            } else {
+                Bitmap.createBitmap(cutout, left, top, right - left, bottom - top)
             }
-            Canvas(output).apply {
-                drawColor(background)
-                drawBitmap(prepared, matrix, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+            val scaledSize = PixelSize(max(1, ((right - left) * scale).roundToInt()), max(1, ((bottom - top) * scale).roundToInt()))
+            // One high-quality resize, then placed on whole pixels so nothing filters it again.
+            val scaled = codec.scale(region, scaledSize)
+            if (region !== cutout && region !== scaled) region.recycle()
+            try {
+                val (x, y) = placement.toFrame(left.toFloat(), top.toFloat(), frame)
+                canvas.drawBitmap(scaled, x.roundToInt().toFloat(), y.roundToInt().toFloat(), null)
+            } finally {
+                scaled.recycle()
             }
-            return output
-        } finally {
-            if (prepared !== cutout) prepared.recycle()
         }
+        // Shrinking softens a sharp photo; a light unsharp mask brings back the crispness.
+        if (reduction >= SHARPEN_FROM_REDUCTION) codec.sharpenInPlace(output)
+        return output
     }
 
     /**
@@ -165,5 +174,11 @@ class PassportRenderer @Inject constructor(
         const val MAX_WATERMARK_TEXT_PX = 22f
         const val POINTS_PER_INCH = 72f
         const val TILE = 512
+
+        /** How far, in source pixels per unit of reduction, the resize filter reaches (Lanczos-3). */
+        const val FILTER_REACH = 3f
+
+        /** Shrinking by less than this leaves the photo crisp enough not to need sharpening. */
+        const val SHARPEN_FROM_REDUCTION = 1.25f
     }
 }
