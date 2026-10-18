@@ -776,6 +776,9 @@ as sharp as the original. Resizing is slower (about 0.5 s instead of 0.06 s for 
 50 KB), which nobody waits on. In the release build, Compress PDF took the test letter from 484 KB
 to 66 KB under a 100 KB limit with its text intact, and Resize and Passport worked with no crashes.
 
+The owner then installed 1.0.3 (an arm64 cut of the same bundle) on their own phone and tried
+Resize, Passport and Compress PDF: everything worked as it should.
+
 `ClarityCheck` (androidTest) repeats the comparison: given a photo on the device it writes before
 and after files for scoring; the class comment has the command.
 
