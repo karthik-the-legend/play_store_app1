@@ -7,17 +7,17 @@ delivers.
 ## Title (30 characters max)
 
 ```
-Photo Resize in KB & PDF
+FormKit: Photo Resize KB & PDF
 ```
 
-24 characters. It leads with the words people type — "photo resize", "in kb" — rather than the
-brand, because nobody searches for a new app by name. The name still appears in the short
-description, the icon and the app itself.
+30 characters. It has to start with the name the app shows on the phone, "FormKit": the first
+production review (October 2026) rejected `Photo Resize in KB & PDF` under the Misleading Claims
+policy because the installed name didn't match the store title. The words people search for,
+"photo resize", "KB", "PDF", follow the name.
 
-Alternatives if you'd rather lead with the name:
-
-- `FormKit: Photo Resize KB` (24)
-- `FormKit – Resize Photo, PDF` (27)
+The store icon (`store-assets/play-icon-512.png`) must likewise be the launcher icon itself: it's
+rendered from `ic_launcher_foreground.xml` on the launcher background, cropped to the 72-unit area
+a launcher shows. Redraw it from those two files if the launcher icon ever changes.
 
 ## Short description (80 characters max)
 

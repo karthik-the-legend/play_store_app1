@@ -671,8 +671,12 @@ AdMob's consent message (GDPR/EEA) is published, with "Do not consent" shown, so
 refuse personalised ads; refusing loses the ads, not the app. AdMob won't review the app until the
 payment profile is complete, which is the owner's to finish.
 
-**Store title** is `Photo Resize in KB & PDF`, not the brand name: people search for what an app
-does. The name is in the short description, the icon and the app itself.
+**Store title** was `Photo Resize in KB & PDF`, keyword-led with no brand, on the idea that people
+search for what an app does. Testing tracks accepted it, but the first production review
+(2026-10-31) rejected it under the Misleading Claims policy: the name on the phone ("FormKit")
+didn't match the store title. It's now `FormKit: Photo Resize KB & PDF` (30 characters), the
+installed name first and the search words after. The 512 px store icon, which had been rendered
+with clipped corners, is now drawn straight from the launcher icon's own vector, so the two match.
 
 **Listing text** in `docs/store-listing.md` is paste-ready, one line per paragraph. Play keeps the
 line breaks it is given, so a hard-wrapped paragraph shows up broken in the listing.
