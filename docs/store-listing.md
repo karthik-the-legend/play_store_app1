@@ -101,3 +101,10 @@ Wikimedia Commons, under CC0: no copyright, and no named person whose likeness t
 trading on. Any replacement needs both of those, not only a free licence — a store listing is
 advertising, which is where a photo of a recognisable person causes trouble even when the photograph
 itself is free to use.
+
+Screenshots 2 and 3 show a portrait the owner generated with Gemini for FormKit (November 2026),
+cropped to drop Gemini's corner mark: an AI image of nobody real, which no one else holds rights in.
+They replaced captures that used NASA's official
+portrait of Kalpana Chawla: public domain as a photograph, but a famous person's face selling an app.
+Characters from films or comics (Iron Man and the like) are worse still — the character itself is
+copyrighted and trademarked, whoever took the picture.
