@@ -96,15 +96,22 @@ indigo and white.
 
 Captured versions of all eight are in `docs/screenshots/`.
 
-The face in screenshot 4 is "Smiling in a cornfield" by Allef Vinicius, from Unsplash by way of
-Wikimedia Commons, under CC0: no copyright, and no named person whose likeness the listing would be
-trading on. Any replacement needs both of those, not only a free licence — a store listing is
-advertising, which is where a photo of a recognisable person causes trouble even when the photograph
-itself is free to use.
+Everything shown in screenshots 2–7 (retaken November 2026) is invented for FormKit:
 
-Screenshots 2 and 3 show a portrait the owner generated with Gemini for FormKit (November 2026),
-cropped to drop Gemini's corner mark: an AI image of nobody real, which no one else holds rights in.
-They replaced captures that used NASA's official
-portrait of Kalpana Chawla: public domain as a photograph, but a famous person's face selling an app.
-Characters from films or comics (Iron Man and the like) are worse still — the character itself is
-copyrighted and trademarked, whoever took the picture.
+- **The face** (2, 3, 4, and the photo on the form in 6 and 7) is a portrait the owner generated
+  with Gemini, cropped to drop Gemini's corner mark: an AI image of nobody real, which no one else
+  holds rights in.
+- **The signature** (5, and on the form) reads "Aadhya", after the owner's developer name, AADHYA
+  TECH. It's drawn with Windows' Brush Script face plus a pen stroke and photographed onto ruled
+  notebook paper in code — nobody's real signature.
+- **The form** (6, 7) is a fictional application form — invented board, an applicant called
+  Aadhya, an `example.com` email and a masked phone number — written as a real text PDF so Compress
+  PDF can show its text staying sharp. Screenshot 6 is the same page composited onto a desk at an
+  angle.
+
+Any replacement needs the same two things, not only a free licence: no copyright held by someone
+else, and nobody recognisable. A store listing is advertising, which is where a famous face causes
+trouble even when the photograph itself is free — the first captures used NASA's public-domain
+portrait of Kalpana Chawla and were replaced for that reason. Characters from films or comics (Iron
+Man and the like) are worse still: the character itself is copyrighted and trademarked, whoever took
+the picture. And never use a real person's signature.
