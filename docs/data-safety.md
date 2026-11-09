@@ -3,9 +3,15 @@
 Play asks these on the **App content → Data safety** page. FormKit itself collects nothing; every
 answer below exists because of the AdMob SDK, which is why they all disappear for a Pro user.
 
-Before submitting, check these against Google's own page for AdMob publishers
-(<https://support.google.com/admob/answer/11150250>) — Google updates what its SDK collects, and the
-publisher is responsible for the declaration.
+Before submitting, check these against Google's own disclosure for the ads SDK
+(<https://developers.google.com/admob/android/privacy/play-data-disclosure>) — Google updates what
+its SDK collects, and the publisher is responsible for the declaration. As of November 2026 it lists
+four things, all collected and shared "for advertising, analytics, and fraud prevention purposes":
+IP address (approximate location), user product interactions, diagnostic information, and device
+identifiers.
+
+The first live listing (November 2026) went out declaring "No data collected", which was wrong; it
+was corrected to the answers below.
 
 ## Overview answers
 
@@ -16,32 +22,38 @@ publisher is responsible for the declaration.
 | Do you provide a way for users to request that their data is deleted? | **No** | Nothing is held on a server to delete. Uninstalling removes everything on the device, and the advertising ID is reset from Android's own settings. |
 | Is your app designed for children? | **No** | Target audience is 18 and over. |
 
+| Question | Answer |
+|---|---|
+| Account creation methods | My app does not allow users to create an account |
+
 ## Data types to declare
 
-### Device or other IDs — advertising ID
+All four get the same answers, because they come from the same SDK for the same reasons:
 
 - **Collected: yes. Shared: yes** (with Google, as the ad network).
 - **Processed ephemerally: no.**
-- **Required or optional:** required for the free version. (Where consent law applies, the consent
-  form comes first, and Pro removes ads entirely.)
-- **Purposes:** Advertising or marketing; Analytics (ad performance); Fraud prevention, security and
-  compliance (invalid-traffic checks).
+- **Required or optional:** required — users can't turn it off inside the app. (Where consent law
+  applies, the consent form comes first, and Pro removes ads entirely.)
+- **Purposes, for both collected and shared:** Advertising or marketing; Analytics; Fraud
+  prevention, security, and compliance.
 
-### Location — approximate location
+### Device or other IDs — Device or other IDs
 
-- **Collected: yes. Shared: yes.**
-- AdMob derives an approximate location from the IP address to pick and cap ads. FormKit asks for no
-  location permission and never reads the phone's location.
-- **Required or optional:** required for the free version.
-- **Purposes:** Advertising or marketing.
+The advertising ID and app set ID.
 
-### App activity — app interactions
+### Location — Approximate location
 
-- **Collected: yes. Shared: yes.**
-- Ad impressions, clicks and similar events measured by AdMob. FormKit adds no analytics of its own
-  and records nothing about which tools you use.
-- **Required or optional:** required for the free version.
-- **Purposes:** Advertising or marketing; Analytics.
+AdMob estimates a general location from the IP address to pick and cap ads. FormKit asks for no
+location permission and never reads the phone's location.
+
+### App activity — App interactions
+
+App launches, ad taps and video views measured by AdMob. FormKit adds no analytics of its own and
+records nothing about which tools you use.
+
+### App info and performance — Diagnostics
+
+App launch time, hang rate and energy use, which the SDK measures about itself and the app.
 
 ## Do NOT declare
 
